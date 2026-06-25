@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Spine Viewer</string>
+    <string name="open_folder">Open Folder</string>
+    <string name="open_file">Open File…</string>
+    <string name="search">Search</string>
+    <string name="clear_list">Clear List</string>
+    <string name="change_version">Change Version</string>
+
+    <!-- item_spine_file defaults -->
+    <string name="default_format">JSON</string>
+    <string name="default_skeleton_name">skeleton</string>
+    <string name="default_version">Spine 4.3</string>
+    <string name="atlas_ok">✓ Atlas</string>
+    <string name="detection_failed">! Auto-detect failed</string>
+
+    <!-- activity_main -->
+    <string name="empty_icon">🦴</string>
+    <string name="empty_title">No Spine files yet</string>
+    <string name="empty_body">Tap the + button to open a folder\ncontaining .json or .skel skeleton files</string>
+    <string name="scanning">Scanning for Spine files…</string>
+
+    <!-- activity_spine_preview -->
+    <string name="loading">Loading…</string>
+    <string name="default_version_badge">v4.3</string>
+    <string name="label_skin">Skin</string>
+    <string name="label_speed">Speed</string>
+    <string name="default_speed">1.0×</string>
+</resources>

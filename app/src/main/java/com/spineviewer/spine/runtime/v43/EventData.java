@@ -1,0 +1,71 @@
+/******************************************************************************
+ * Spine Runtimes License Agreement
+ * Last updated April 5, 2025. Replaces all prior versions.
+ *
+ * Copyright (c) 2013-2025, Esoteric Software LLC
+ *
+ * Integration of the Spine Runtimes into software or otherwise creating
+ * derivative works of the Spine Runtimes is permitted under the terms and
+ * conditions of Section 2 of the Spine Editor License Agreement:
+ * http://esotericsoftware.com/spine-editor-license
+ *
+ * Otherwise, it is permitted to integrate the Spine Runtimes into software
+ * or otherwise create derivative works of the Spine Runtimes (collectively,
+ * "Products"), provided that each user of the Products must obtain their own
+ * Spine Editor license and redistribution of the Products in any form must
+ * include this license and copyright notice.
+ *
+ * THE SPINE RUNTIMES ARE PROVIDED BY ESOTERIC SOFTWARE LLC "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL ESOTERIC SOFTWARE LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES,
+ * BUSINESS INTERRUPTION, OR LOSS OF USE, DATA, OR PROFITS) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *****************************************************************************/
+
+package com.spineviewer.spine.runtime.v43;
+
+import com.badlogic.gdx.utils.Null;
+
+/** Stores the setup pose values for an {@link Event}.
+ * <p>
+ * See <a href="https://esotericsoftware.com/spine-events">Events</a> in the Spine User Guide. */
+public class EventData {
+	final String name;
+	@Null String audioPath;
+	final Event setupPose = new Event(-1, this);
+
+	public EventData (String name) {
+		this.name = name;
+	}
+
+	/** The setup values that are shared by all events with this data. */
+	public Event getSetupPose () {
+		return setupPose;
+	}
+
+	/** Path to an audio file relative to the audio folder as defined in Spine. */
+	public @Null String getAudioPath () {
+		return audioPath;
+	}
+
+	public void setAudioPath (@Null String audioPath) {
+		if (audioPath == null) throw new IllegalArgumentException("audioPath cannot be null.");
+		this.audioPath = audioPath;
+	}
+
+	/** The name of the event, unique across all events in the skeleton.
+	 * <p>
+	 * See {@link SkeletonData#findEvent(String)}. */
+	public String getName () {
+		return name;
+	}
+
+	public String toString () {
+		return name;
+	}
+}
