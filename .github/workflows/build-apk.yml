@@ -2,7 +2,7 @@ name: Android CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ SpineViewer ]
   workflow_dispatch:    # 允许手动点击运行
 
 jobs:
