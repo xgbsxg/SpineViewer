@@ -22,4 +22,7 @@
     <color name="overlay_top">#22212121</color>
     <color name="overlay_bottom">#22212121</color>
     <color name="warning">#FFC107</color>
+    <color name="surface_variant">#FFE0E0E0</color>
+    <color name="on_surface">#FF000000</color>
+    <color name="on_surface_variant">#FF49454F</color>
 </resources>
