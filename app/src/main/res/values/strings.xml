@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Spine Viewer</string>
-    <string name="open_folder">Open Folder</string>
-    <string name="open_file">Open File…</string>
-    <string name="search">Search</string>
-    <string name="clear_list">Clear List</string>
-    <string name="change_version">Change Version</string>
+    <string name="app_name">Spine 查看器</string>
+    <string name="open_folder">打开文件夹</string>
+    <string name="open_file">打开文件…</string>
+    <string name="search">搜索</string>
+    <string name="clear_list">清除列表</string>
+    <string name="change_version">切换版本</string>
 
     <!-- item_spine_file defaults -->
     <string name="default_format">JSON</string>
-    <string name="default_skeleton_name">skeleton</string>
+    <string name="default_skeleton_name">骨骼</string>
     <string name="default_version">Spine 4.3</string>
-    <string name="atlas_ok">✓ Atlas</string>
-    <string name="detection_failed">! Auto-detect failed</string>
+    <string name="atlas_ok">✓ 图集</string>
+    <string name="detection_failed">! 自动检测失败</string>
 
     <!-- activity_main -->
     <string name="empty_icon">🦴</string>
-    <string name="empty_title">No Spine files yet</string>
-    <string name="empty_body">Tap the + button to open a folder\ncontaining .json or .skel skeleton files</string>
-    <string name="scanning">Scanning for Spine files…</string>
+    <string name="empty_title">暂无 Spine 文件</string>
+    <string name="empty_body">点击 + 按钮打开包含 .json 或 .skel 骨骼文件的文件夹</string>
+    <string name="scanning">正在扫描 Spine 文件…</string>
 
     <!-- activity_spine_preview -->
-    <string name="loading">Loading…</string>
+    <string name="loading">加载中…</string>
     <string name="default_version_badge">v4.3</string>
-    <string name="label_skin">Skin</string>
-    <string name="label_speed">Speed</string>
+    <string name="label_skin">皮肤</string>
+    <string name="label_speed">速度</string>
     <string name="default_speed">1.0×</string>
 </resources>
