@@ -36,8 +36,6 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity
         implements SpineFileAdapter.OnFileClickListener {
 
-    private static final int REQUEST_PERMISSIONS = 100;
-
     private RecyclerView recyclerView;
     private SpineFileAdapter adapter;
     private View emptyView;
@@ -141,8 +139,6 @@ public class MainActivity extends AppCompatActivity
                 return true;
             }
         });
-
-        menu.findItem(R.id.action_clear).setVisible(false);
 
         return true;
     }
