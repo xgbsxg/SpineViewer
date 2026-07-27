@@ -1,32 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 应用名称 -->
     <string name="app_name">Spine 查看器</string>
-    <string name="open_folder">打开文件夹</string>
+
+    <!-- 主界面 -->
     <string name="open_file">打开文件…</string>
-    <string name="search">搜索</string>
     <string name="clear_list">清除列表</string>
-    <string name="change_version">切换版本</string>
     <string name="settings">设置</string>
-    <string name="default_folder">默认文件夹</string>
+    <string name="search">搜索</string>
+    <string name="empty_icon">🦴</string>
+    <string name="empty_title">暂无 Spine 文件</string>
+    <string name="empty_body">点击右上角“打开文件”或从其他应用打开 .json/.skel 文件</string>
+    <string name="scanning">正在扫描 Spine 文件…</string>
+    <string name="list_cleared">列表已清空</string>
+    <string name="need_permission">需要存储权限才能浏览文件</string>
+    <string name="found_files">找到 %d 个 Spine 骨骼文件</string>
+    <string name="no_files_found">所选文件夹中未找到 Spine 文件</string>
+
+    <!-- 设置界面 -->
+    <string name="settings_title">设置</string>
+    <string name="default_folder_label">默认扫描文件夹</string>
+    <string name="no_default_folder">未设置默认文件夹</string>
+    <string name="current_folder">当前：%s</string>
     <string name="select_folder">选择文件夹</string>
     <string name="clear_default">清除默认</string>
-    <string name="no_default_folder">未设置默认文件夹</string>
-    <string name="current_folder">当前：</string>
+    <string name="default_folder_updated">默认文件夹已更新</string>
+    <string name="default_folder_cleared">默认文件夹已清除</string>
 
-    <!-- item_spine_file defaults -->
+    <!-- 文件列表项 -->
     <string name="default_format">JSON</string>
     <string name="default_skeleton_name">骨骼</string>
     <string name="default_version">Spine 4.3</string>
     <string name="atlas_ok">✓ 图集</string>
     <string name="detection_failed">! 自动检测失败</string>
+    <string name="version_label">版本</string>
 
-    <!-- activity_main -->
-    <string name="empty_icon">🦴</string>
-    <string name="empty_title">暂无 Spine 文件</string>
-    <string name="empty_body">点击右上角“打开文件”或从其他应用打开 .json/.skel 文件</string>
-    <string name="scanning">正在扫描 Spine 文件…</string>
-
-    <!-- activity_spine_preview -->
+    <!-- 预览界面 -->
     <string name="loading">加载中…</string>
     <string name="default_version_badge">v4.3</string>
     <string name="label_skin">皮肤</string>
@@ -44,5 +53,24 @@
     <string name="load_error">加载错误</string>
     <string name="try_switch_version">尝试切换运行时版本？</string>
     <string name="close">关闭</string>
-    <string name="version_label">版本</string>
+    <string name="version_prefix">v</string>
+    <string name="anim_count">%d 个动画</string>
+    <string name="skin_count">%d 个皮肤</string>
+    <string name="status_loaded">✓ %1$d 个动画  •  %2$d 个皮肤</string>
+    <string name="skin_picker_title">选择皮肤（多选）</string>
+    <string name="skin_apply">应用</string>
+    <string name="skin_cancel">取消</string>
+    <string name="skin_none">无</string>
+    <string name="skin_single">%s</string>
+    <string name="skin_multiple">%d 个皮肤已选</string>
+    <string name="switch_version_title">切换运行时版本</string>
+
+    <!-- 版本选择弹窗 -->
+    <string name="select_version_title">选择运行时版本: %s</string>
+    <string name="version_item">Spine %s</string>
+
+    <!-- 错误信息 -->
+    <string name="error_loading">加载失败：%s</string>
+    <string name="error_render">渲染错误：%s</string>
+    <string name="error_unknown">未知错误，请检查文件</string>
 </resources>
