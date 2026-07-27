@@ -9,7 +9,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Settings"
+        android:text="@string/settings_title"
         android:textSize="24sp"
         android:textStyle="bold"
         android:textColor="@color/text_primary"
@@ -18,7 +18,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Default Scan Folder"
+        android:text="@string/default_folder_label"
         android:textSize="18sp"
         android:textColor="@color/text_primary"
         android:layout_marginBottom="8dp" />
@@ -27,7 +27,7 @@
         android:id="@+id/tv_default_folder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="No default folder set"
+        android:text="@string/no_default_folder"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:background="@color/surface"
@@ -38,14 +38,14 @@
         android:id="@+id/btn_select_folder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Select Folder"
+        android:text="@string/select_folder"
         android:layout_marginBottom="8dp" />
 
     <Button
         android:id="@+id/btn_clear_folder"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Clear Default"
+        android:text="@string/clear_default"
         style="@style/Widget.AppCompat.Button.Borderless"
         android:textColor="@color/accent" />
 
