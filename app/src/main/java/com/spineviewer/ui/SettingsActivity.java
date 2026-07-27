@@ -7,6 +7,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultCallback;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
@@ -36,15 +37,18 @@ public class SettingsActivity extends AppCompatActivity {
 
         folderPickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
-                uri -> {
-                    if (uri != null) {
-                        getContentResolver().takePersistableUriPermission(uri,
-                                Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                        String uriString = uri.toString();
-                        prefManager.saveDefaultFolderUri(uriString);
-                        prefManager.saveLastScanUri(uriString);
-                        updateDisplay();
-                        Toast.makeText(this, "Default folder updated", Toast.LENGTH_SHORT).show();
+                new ActivityResultCallback<Uri>() {
+                    @Override
+                    public void onActivityResult(Uri uri) {
+                        if (uri != null) {
+                            getContentResolver().takePersistableUriPermission(uri,
+                                    Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                            String uriString = uri.toString();
+                            prefManager.saveDefaultFolderUri(uriString);
+                            prefManager.saveLastScanUri(uriString);
+                            updateDisplay();
+                            Toast.makeText(SettingsActivity.this, "Default folder updated", Toast.LENGTH_SHORT).show();
+                        }
                     }
                 }
         );
