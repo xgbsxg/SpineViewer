@@ -93,12 +93,12 @@ public class SpinePreviewActivity extends AndroidApplication
         btnNext          = findViewById(R.id.btn_next_anim);
         btnChangeVersion = findViewById(R.id.btn_change_version);
 
-        tvVersion.setText("v" + currentVersion.getDisplayName());
+        tvVersion.setText(getString(R.string.version_prefix) + currentVersion.getDisplayName());
         tvStatus.setText(R.string.loading);
 
         seekTimeScale.setMax(19);
         seekTimeScale.setProgress(9);
-        tvTimeScale.setText("1.0×");
+        tvTimeScale.setText(R.string.default_speed);
         seekTimeScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean user) {
                 float scale = (p + 1) / 10f;
@@ -109,7 +109,7 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onStopTrackingTouch(SeekBar s) {}
         });
 
-        // 默认启用循环，无需开关
+        // 默认启用循环
         if (engine != null) engine.setLooping(true);
 
         switchPremultiply.setChecked(false);
@@ -152,7 +152,6 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 currentAnimIdx = pos;
                 if (animations != null && engine != null) {
-                    // 始终循环
                     engine.setAnimation(animations.get(pos), true);
                 }
             }
@@ -175,7 +174,7 @@ public class SpinePreviewActivity extends AndroidApplication
         container.removeAllViews();
 
         currentVersion = version;
-        tvVersion.setText("v" + version.getDisplayName());
+        tvVersion.setText(getString(R.string.version_prefix) + version.getDisplayName());
         tvStatus.setText(R.string.loading);
 
         engine = SpineEngineFactory.create(version);
@@ -185,7 +184,6 @@ public class SpinePreviewActivity extends AndroidApplication
                 version,
                 textureUris);
         engine.setStateListener(this);
-        // 默认循环
         engine.setLooping(true);
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
@@ -236,11 +234,11 @@ public class SpinePreviewActivity extends AndroidApplication
         String[] labels = new String[versions.length];
         int sel = 0;
         for (int i = 0; i < versions.length; i++) {
-            labels[i] = "Spine " + versions[i].getDisplayName();
+            labels[i] = getString(R.string.version_item, versions[i].getDisplayName());
             if (versions[i] == currentVersion) sel = i;
         }
         new AlertDialog.Builder(this)
-                .setTitle(R.string.switch_version)
+                .setTitle(R.string.switch_version_title)
                 .setSingleChoiceItems(labels, sel, (dialog, which) -> {
                     dialog.dismiss();
                     if (versions[which] != currentVersion) {
@@ -260,9 +258,8 @@ public class SpinePreviewActivity extends AndroidApplication
         if (!skins.isEmpty()) selectedSkins[0] = true;
 
         runOnUiThread(() -> {
-            tvStatus.setText("✓  " + animations.size() + " 个动画  •  "
-                    + skins.size() + " 个皮肤");
-            tvVersion.setText("v" + version.getDisplayName());
+            tvStatus.setText(getString(R.string.status_loaded, animations.size(), skins.size()));
+            tvVersion.setText(getString(R.string.version_prefix) + version.getDisplayName());
 
             ArrayAdapter<String> animAdapter = new ArrayAdapter<>(this,
                     android.R.layout.simple_spinner_item, animations);
@@ -281,11 +278,11 @@ public class SpinePreviewActivity extends AndroidApplication
         for (int i = 0; i < skins.size(); i++) checked[i] = selectedSkins[i];
 
         new AlertDialog.Builder(this)
-                .setTitle("选择皮肤（多选）")
+                .setTitle(R.string.skin_picker_title)
                 .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
                     checked[which] = isChecked;
                 })
-                .setPositiveButton("应用", (dialog, which) -> {
+                .setPositiveButton(R.string.skin_apply, (dialog, which) -> {
                     boolean anySelected = false;
                     for (boolean b : checked) if (b) { anySelected = true; break; }
                     if (!anySelected && checked.length > 0) checked[0] = true;
@@ -293,7 +290,7 @@ public class SpinePreviewActivity extends AndroidApplication
                     updateSkinButton();
                     applySelectedSkins();
                 })
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.skin_cancel, null)
                 .show();
     }
 
@@ -304,11 +301,11 @@ public class SpinePreviewActivity extends AndroidApplication
             if (i < selectedSkins.length && selectedSkins[i]) active.add(skins.get(i));
         }
         if (active.isEmpty()) {
-            btnSkin.setText("无");
+            btnSkin.setText(R.string.skin_none);
         } else if (active.size() == 1) {
             btnSkin.setText(active.get(0));
         } else {
-            btnSkin.setText(active.size() + " 个皮肤已选");
+            btnSkin.setText(getString(R.string.skin_multiple, active.size()));
         }
     }
 
@@ -326,9 +323,9 @@ public class SpinePreviewActivity extends AndroidApplication
     @Override
     public void onError(String message) {
         runOnUiThread(() -> {
-            tvStatus.setText("⚠ " + message);
+            tvStatus.setText(getString(R.string.error_loading, message));
             new AlertDialog.Builder(this)
-                    .setTitle(R.string.load_error + " — Spine " + currentVersion.getDisplayName())
+                    .setTitle(getString(R.string.load_error) + " — Spine " + currentVersion.getDisplayName())
                     .setMessage(message + "\n\n" + getString(R.string.try_switch_version))
                     .setPositiveButton(R.string.switch_version, (d, w) -> showVersionPicker())
                     .setNegativeButton(R.string.close, (d, w) -> finish())
