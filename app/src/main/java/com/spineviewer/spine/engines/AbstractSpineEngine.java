@@ -37,6 +37,10 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
 
     private int maxTextureSize = 2048;
 
+    protected float animProgress = 0f;
+    protected float animDuration = 0f;
+    protected boolean premultipliedAlpha = false;
+
     @Override
     public void create() {
         batch = new PolygonSpriteBatch();
@@ -71,6 +75,7 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             }
 
             loadSkeleton();
+            updateRendererAlpha();
         } catch (Exception e) {
             notifyError("Failed to load skeleton: " + e.getMessage());
             Log.e(TAG, "create() error", e);
@@ -298,6 +303,38 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             for (File c : f.listFiles()) deleteRecursive(c);
         }
         f.delete();
+    }
+
+    protected void updateProgress(float progress, float duration) {
+        this.animProgress = progress;
+        this.animDuration = duration;
+    }
+
+    protected void updateRendererAlpha() {
+        // 由子类覆盖
+    }
+
+    @Override
+    public void setPremultipliedAlpha(boolean enabled) {
+        this.premultipliedAlpha = enabled;
+        if (loaded) {
+            updateRendererAlpha();
+        }
+    }
+
+    @Override
+    public float getAnimationProgress() {
+        return animProgress;
+    }
+
+    @Override
+    public float getAnimationDuration() {
+        return animDuration;
+    }
+
+    @Override
+    public void setAnimationPosition(float position) {
+        // 由子类覆盖
     }
 
     @Override
