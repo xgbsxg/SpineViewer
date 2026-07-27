@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="@color/bg_primary">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:textSize="24sp"
+        android:textStyle="bold"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Default Scan Folder"
+        android:textSize="18sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tv_default_folder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="No default folder set"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:background="@color/surface"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btn_select_folder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Folder"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/btn_clear_folder"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Clear Default"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:textColor="@color/accent" />
+
+</LinearLayout>
