@@ -2,6 +2,8 @@ package com.spineviewer.spine.engines;
 
 import android.content.Context;
 import android.database.Cursor;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.provider.DocumentsContract;
 import android.util.Log;
@@ -23,11 +25,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Shared base class with common rendering setup, camera, and helper utilities.
- * Each version-specific subclass overrides loadSkeleton() to use its own
- * runtime classes and implements the abstract animation/skin accessors.
- */
 public abstract class AbstractSpineEngine extends SpineViewerEngine {
     private static final String TAG = "AbstractSpineEngine";
 
@@ -36,8 +33,9 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
     protected FileHandle skeletonFileHandle;
     protected FileHandle atlasFileHandle;
 
-    // Background color (checkerboard-like dark gray)
     protected static final Color BG_COLOR = new Color(0.15f, 0.15f, 0.18f, 1f);
+
+    private int maxTextureSize = 2048;
 
     @Override
     public void create() {
@@ -49,14 +47,16 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         camera = new OrthographicCamera();
         camera.setToOrtho(false, w, h);
         camX = w / 2f;
-        camY = h / 3f;  // place skeleton slightly above center
+        camY = h / 3f;
         camera.position.set(camX, camY, 0);
 
-        // Copy URIs to temp files so libGDX FileHandle can read them
+        maxTextureSize = Gdx.gl.glGetInteger(GL20.GL_MAX_TEXTURE_SIZE);
+        if (maxTextureSize <= 0) maxTextureSize = 2048;
+        Log.d(TAG, "Max texture size: " + maxTextureSize);
+
         try {
             cacheDir = new File(context.getCacheDir(), "spine_tmp");
             cacheDir.mkdirs();
-            // Preserve original filename so engines can detect .skel vs .json
             String skelName = getFileNameFromUri(skeletonUri);
             if (skelName == null) skelName = "skeleton";
             File skelFile = copyUriToTemp(skeletonUri, skelName);
@@ -67,8 +67,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 if (atlasName == null) atlasName = "skeleton.atlas";
                 File atlasFile = copyUriToTemp(atlasUri, atlasName);
                 atlasFileHandle = new FileHandle(atlasFile);
-
-                // Copy any png files referenced in the atlas — look for *.png siblings
                 copyAtlasTextures(atlasFile);
             }
 
@@ -79,9 +77,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
     }
 
-    /**
-     * Subclasses implement this to create their version-specific skeleton, atlas, renderer etc.
-     */
     protected abstract void loadSkeleton() throws Exception;
 
     @Override
@@ -94,10 +89,15 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         camera.update();
         batch.setProjectionMatrix(camera.combined);
 
-        renderSkeleton(delta);
+        try {
+            renderSkeleton(delta);
+        } catch (Exception e) {
+            Log.e(TAG, "Render error", e);
+            notifyError("Render error: " + e.getMessage());
+        }
 
         if (showBones) {
-            com.badlogic.gdx.graphics.glutils.ShapeRenderer debugShapes = getDebugShapeRenderer();
+            ShapeRenderer debugShapes = getDebugShapeRenderer();
             if (debugShapes != null) {
                 debugShapes.setProjectionMatrix(camera.combined);
             }
@@ -105,27 +105,18 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
     }
 
-    /**
-     * Subclasses implement this to update AnimationState and render the SkeletonRenderer.
-     */
     protected abstract void renderSkeleton(float delta);
 
-    /**
-     * Optional: render debug overlays (bones, attachment outlines).
-     */
     protected void renderDebug() {}
 
     @Override
     public void dispose() {
         super.dispose();
         if (shapeRenderer != null) shapeRenderer.dispose();
-        // Clean up temp files
         if (cacheDir != null) {
             deleteRecursive(cacheDir);
         }
     }
-
-    // ─── Helpers ────────────────────────────────────────────────────────────
 
     protected File copyUriToTemp(Uri uri, String targetName) throws IOException {
         File out = new File(cacheDir, targetName);
@@ -139,25 +130,16 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         return out;
     }
 
-    /**
-     * Copies all sibling files from the SAF directory into the cache.
-     * Uses pre-known URIs collected by FileScanner as the primary method,
-     * falling back to ContentResolver directory enumeration and atlas parsing.
-     */
     protected void copyAtlasTextures(File atlasFile) {
-        // Primary strategy: copy all pre-known sibling URIs (from FileScanner)
         if (textureUris != null && !textureUris.isEmpty()) {
             Log.d(TAG, "Copying " + textureUris.size() + " sibling files from pre-scanned URIs");
             for (Uri uri : textureUris) {
                 String name = getFileNameFromUri(uri);
-                if (name == null) {
-                    Log.w(TAG, "Could not extract filename from URI: " + uri);
-                    continue;
-                }
-                // Skip skeleton and atlas — already copied with original names above
+                if (name == null) continue;
                 if (name.equals(skeletonFileHandle.name()) || name.equals(atlasFileHandle.name())) continue;
                 try {
-                    copyUriToTemp(uri, name);
+                    File temp = copyUriToTemp(uri, name);
+                    scaleTextureIfNeeded(temp);
                     Log.d(TAG, "Copied: " + name);
                 } catch (Exception e) {
                     Log.w(TAG, "Could not copy " + name + ": " + e.getMessage());
@@ -167,8 +149,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
 
         Log.w(TAG, "No pre-scanned URIs available, falling back to directory enumeration");
-
-        // Fallback strategy: enumerate parent directory via ContentResolver
         try {
             String atlasDocId = DocumentsContract.getDocumentId(atlasUri);
             if (atlasDocId != null) {
@@ -178,10 +158,10 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                     String parentDocId = lastSep >= 0 ? atlasDocId.substring(0, lastSep) : atlasDocId;
                     Uri childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, parentDocId);
                     Cursor cursor = context.getContentResolver().query(childrenUri,
-                        new String[] {
-                            DocumentsContract.Document.COLUMN_DOCUMENT_ID,
-                            DocumentsContract.Document.COLUMN_DISPLAY_NAME
-                        }, null, null, null);
+                            new String[]{
+                                    DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                                    DocumentsContract.Document.COLUMN_DISPLAY_NAME
+                            }, null, null, null);
 
                     if (cursor != null) {
                         try {
@@ -193,7 +173,8 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                                 if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".webp")) {
                                     Uri childUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, childDocId);
                                     try {
-                                        copyUriToTemp(childUri, displayName);
+                                        File temp = copyUriToTemp(childUri, displayName);
+                                        scaleTextureIfNeeded(temp);
                                     } catch (Exception e) {
                                         Log.w(TAG, "Could not copy texture " + displayName + ": " + e.getMessage());
                                     }
@@ -209,7 +190,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             Log.w(TAG, "Could not enumerate atlas directory: " + e.getMessage());
         }
 
-        // Final fallback: parse atlas file and build sibling URIs
         try {
             String atlasContent = new String(java.nio.file.Files.readAllBytes(atlasFile.toPath()));
             String[] lines = atlasContent.split("\\r?\\n");
@@ -220,7 +200,8 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                     Uri textureUri = buildSiblingUri(atlasUri, trimmed);
                     if (textureUri != null) {
                         try {
-                            copyUriToTemp(textureUri, trimmed);
+                            File temp = copyUriToTemp(textureUri, trimmed);
+                            scaleTextureIfNeeded(temp);
                         } catch (Exception e) {
                             Log.w(TAG, "Could not copy texture " + trimmed + ": " + e.getMessage());
                         }
@@ -234,7 +215,34 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
     }
 
-    /** Extracts a display filename from a content URI. */
+    private void scaleTextureIfNeeded(File imageFile) {
+        BitmapFactory.Options opts = new BitmapFactory.Options();
+        opts.inJustDecodeBounds = true;
+        BitmapFactory.decodeFile(imageFile.getAbsolutePath(), opts);
+        int width = opts.outWidth;
+        int height = opts.outHeight;
+        if (width <= 0 || height <= 0) return;
+
+        if (width > maxTextureSize || height > maxTextureSize) {
+            float scale = Math.min((float) maxTextureSize / width, (float) maxTextureSize / height);
+            int newWidth = Math.round(width * scale);
+            int newHeight = Math.round(height * scale);
+            opts.inJustDecodeBounds = false;
+            opts.inSampleSize = 1;
+            Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath(), opts);
+            if (bitmap == null) return;
+            Bitmap scaled = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true);
+            bitmap.recycle();
+            try (FileOutputStream fos = new FileOutputStream(imageFile)) {
+                scaled.compress(Bitmap.CompressFormat.PNG, 90, fos);
+                scaled.recycle();
+                Log.d(TAG, "Scaled texture to " + newWidth + "x" + newHeight);
+            } catch (IOException e) {
+                Log.w(TAG, "Failed to save scaled texture", e);
+            }
+        }
+    }
+
     private String getFileNameFromUri(Uri uri) {
         try (Cursor cursor = context.getContentResolver().query(uri,
                 new String[]{DocumentsContract.Document.COLUMN_DISPLAY_NAME},
@@ -245,7 +253,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             }
         } catch (Exception ignored) {
         }
-        // Fallback: last path segment
         try {
             String lastSeg = uri.getLastPathSegment();
             if (lastSeg != null) {
@@ -257,29 +264,19 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         return null;
     }
 
-    /**
-     * Extracts the tree URI from a document URI that lives under a tree.
-     * E.g. content://authority/tree/{treeId}/document/{docId} →
-     *      content://authority/tree/{treeId}
-     */
     private static Uri extractTreeUri(Uri documentUri) {
         java.util.List<String> segments = documentUri.getPathSegments();
         if (segments.size() >= 2 && "tree".equals(segments.get(0))) {
             return new Uri.Builder()
-                .scheme(documentUri.getScheme())
-                .authority(documentUri.getAuthority())
-                .appendPath("tree")
-                .appendPath(segments.get(1))
-                .build();
+                    .scheme(documentUri.getScheme())
+                    .authority(documentUri.getAuthority())
+                    .appendPath("tree")
+                    .appendPath(segments.get(1))
+                    .build();
         }
         return null;
     }
 
-    /**
-     * Build a URI for a sibling file using DocumentsContract.
-     * Note: documentId passed to buildDocumentUriUsingTree should NOT be pre-encoded;
-     * the method uses Uri.Builder.appendPath() which encodes automatically.
-     */
     protected Uri buildSiblingUri(Uri uri, String siblingName) {
         try {
             String docId = DocumentsContract.getDocumentId(uri);
@@ -288,7 +285,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             if (treeUri == null) return null;
             int lastSep = docId.lastIndexOf('/');
             String parentDocId = lastSep >= 0 ? docId.substring(0, lastSep) : docId;
-            // Document IDs use raw (decoded) paths; buildDocumentUriUsingTree will encode
             String siblingDocId = parentDocId + "/" + siblingName;
             return DocumentsContract.buildDocumentUriUsingTree(treeUri, siblingDocId);
         } catch (Exception e) {
