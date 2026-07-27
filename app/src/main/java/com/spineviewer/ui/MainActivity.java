@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity
                         if (!v) { granted = false; break; }
                     }
                     if (granted) openFolderPicker();
-                    else Toast.makeText(this, "需要存储权限才能浏览文件", Toast.LENGTH_LONG).show();
+                    else Toast.makeText(this, R.string.need_permission, Toast.LENGTH_LONG).show();
                 });
 
         handleIncomingIntent(getIntent());
@@ -171,7 +171,7 @@ public class MainActivity extends AppCompatActivity
         adapter.setItems(fileList);
         prefManager.clearFileList();
         updateEmptyView();
-        Toast.makeText(this, "列表已清空", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.list_cleared, Toast.LENGTH_SHORT).show();
     }
 
     private void openFolderPicker() {
@@ -214,9 +214,11 @@ public class MainActivity extends AppCompatActivity
                     prefManager.saveFileList(fileList);
                     adapter.setItems(fileList);
                     updateEmptyView();
-                    Toast.makeText(this, "找到 " + found.size() + " 个 Spine 骨骼文件", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,
+                            getString(R.string.found_files, found.size()),
+                            Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "所选文件夹中未找到 Spine 文件", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, R.string.no_files_found, Toast.LENGTH_SHORT).show();
                 }
             });
         }).start();
@@ -273,19 +275,19 @@ public class MainActivity extends AppCompatActivity
         String[] labels = new String[versions.length];
         int currentIdx = 0;
         for (int i = 0; i < versions.length; i++) {
-            labels[i] = "Spine " + versions[i].getDisplayName();
+            labels[i] = getString(R.string.version_item, versions[i].getDisplayName());
             if (versions[i] == info.getEffectiveVersion()) currentIdx = i;
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("选择运行时版本: " + info.name)
+                .setTitle(getString(R.string.select_version_title, info.name))
                 .setSingleChoiceItems(labels, currentIdx, (dialog, which) -> {
                     info.selectedVersion = versions[which];
                     prefManager.saveFileList(fileList);
                     adapter.notifyItemChanged(position);
                     dialog.dismiss();
                 })
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.close, null)
                 .show();
     }
 
