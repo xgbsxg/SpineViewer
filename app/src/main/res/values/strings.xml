@@ -11,12 +11,18 @@
     <string name="change_version">切换版本</string>
     <string name="empty_icon">🦴</string>
     <string name="empty_title">暂无 Spine 文件</string>
-    <string name="empty_body">点击右上角“打开文件”或从其他应用打开 .json/.skel 文件</string>
+    <string name="empty_body">点击右上角“打开文件”或前往“设置”选择默认文件夹</string>
     <string name="scanning">正在扫描 Spine 文件…</string>
     <string name="list_cleared">列表已清空</string>
     <string name="need_permission">需要存储权限才能浏览文件</string>
     <string name="found_files">找到 %d 个 Spine 骨骼文件</string>
     <string name="no_files_found">所选文件夹中未找到 Spine 文件</string>
+
+    <!-- 首次启动引导 -->
+    <string name="welcome_title">欢迎使用 Spine 查看器</string>
+    <string name="welcome_message">请先在“设置”中选择一个包含 Spine 文件的文件夹，或者点击“打开文件”单独打开一个骨骼文件。</string>
+    <string name="go_to_settings">前往设置</string>
+    <string name="later">稍后</string>
 
     <!-- 设置界面 -->
     <string name="settings_title">设置</string>
