@@ -2,8 +2,6 @@ package com.spineviewer.ui;
 
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -44,8 +42,7 @@ public class SpinePreviewActivity extends AndroidApplication
     private Spinner spinnerAnimation;
     private android.widget.Button btnSkin;
     private SeekBar seekTimeScale;
-    private SeekBar seekProgress;
-    private TextView tvTimeScale, tvProgress, tvStatus, tvVersion;
+    private TextView tvTimeScale, tvStatus, tvVersion;
     private Switch switchLoop, switchPremultiply;
     private ImageButton btnTogglePanel, btnResetCamera, btnShowBones;
     private ImageButton btnPause, btnPrev, btnNext, btnChangeVersion;
@@ -62,10 +59,6 @@ public class SpinePreviewActivity extends AndroidApplication
     private int currentAnimIdx = 0;
     private boolean[] selectedSkins;
     private ArrayList<Uri> textureUris;
-
-    private Handler mainHandler = new Handler(Looper.getMainLooper());
-    private Runnable progressUpdater;
-    private boolean isDraggingProgress = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,9 +81,7 @@ public class SpinePreviewActivity extends AndroidApplication
         spinnerAnimation = findViewById(R.id.spinner_animation);
         btnSkin          = findViewById(R.id.spinner_skin);
         seekTimeScale    = findViewById(R.id.seek_time_scale);
-        seekProgress     = findViewById(R.id.seek_progress);
         tvTimeScale      = findViewById(R.id.tv_time_scale);
-        tvProgress       = findViewById(R.id.tv_progress);
         tvStatus         = findViewById(R.id.tv_status);
         tvVersion        = findViewById(R.id.tv_version_badge);
         switchLoop       = findViewById(R.id.switch_loop);
@@ -127,32 +118,6 @@ public class SpinePreviewActivity extends AndroidApplication
         switchPremultiply.setChecked(false);
         switchPremultiply.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (engine != null) engine.setPremultipliedAlpha(isChecked);
-        });
-
-        seekProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-            @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                if (fromUser && engine != null && !isDraggingProgress) {
-                    float pos = progress / 1000f;
-                    engine.setAnimationPosition(pos);
-                    tvProgress.setText(String.format("%.1f%%", pos * 100));
-                }
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
-                isDraggingProgress = true;
-            }
-
-            @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
-                isDraggingProgress = false;
-                if (engine != null) {
-                    float pos = seekBar.getProgress() / 1000f;
-                    engine.setAnimationPosition(pos);
-                    tvProgress.setText(String.format("%.1f%%", pos * 100));
-                }
-            }
         });
 
         btnTogglePanel.setOnClickListener(v -> {
@@ -205,24 +170,6 @@ public class SpinePreviewActivity extends AndroidApplication
                         return true;
                     }
                 });
-
-        // 进度更新任务
-        progressUpdater = new Runnable() {
-            @Override
-            public void run() {
-                if (engine != null && engine.isLoaded() && !isDraggingProgress) {
-                    float duration = engine.getAnimationDuration();
-                    float progress = engine.getAnimationProgress();
-                    if (duration > 0) {
-                        int prog = (int) (progress * 1000);
-                        seekProgress.setProgress(prog);
-                        tvProgress.setText(String.format("%.1f%%", progress * 100));
-                    }
-                }
-                mainHandler.postDelayed(this, 50);
-            }
-        };
-        mainHandler.post(progressUpdater);
     }
 
     private void launchEngine(SpineVersion version) {
@@ -304,8 +251,6 @@ public class SpinePreviewActivity extends AndroidApplication
                 .show();
     }
 
-    // ─── StateListener ──────────────────────────────────────────────────────
-
     @Override
     public void onLoaded(List<String> animations, List<String> skins, SpineVersion version) {
         this.animations = animations;
@@ -326,10 +271,6 @@ public class SpinePreviewActivity extends AndroidApplication
 
             updateSkinButton();
             applySelectedSkins();
-
-            // 重置进度条
-            seekProgress.setProgress(0);
-            tvProgress.setText("0%");
         });
     }
 
@@ -397,12 +338,6 @@ public class SpinePreviewActivity extends AndroidApplication
 
     @Override
     public void onAnimationComplete(String animationName) {}
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        mainHandler.removeCallbacks(progressUpdater);
-    }
 
     @SuppressWarnings({"deprecation", "unchecked"})
     private static ArrayList<Uri> getParcelableUriListCompat(android.content.Intent intent, String key) {
