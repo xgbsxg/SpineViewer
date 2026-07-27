@@ -35,7 +35,8 @@ public class SettingsActivity extends AppCompatActivity {
         btnSelectFolder = findViewById(R.id.btn_select_folder);
         btnClearFolder = findViewById(R.id.btn_clear_folder);
 
-        folderPickerLauncher = registerForActivityResult(
+        // 显式指定泛型参数，避免类型推断冲突
+        folderPickerLauncher = this.<Void, Uri>registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
                 new ActivityResultCallback<Uri>() {
                     @Override
