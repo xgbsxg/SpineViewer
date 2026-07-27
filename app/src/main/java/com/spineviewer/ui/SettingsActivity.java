@@ -7,9 +7,7 @@ import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultCallback;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.spineviewer.R;
@@ -17,12 +15,12 @@ import com.spineviewer.utils.PreferenceManager;
 
 public class SettingsActivity extends AppCompatActivity {
 
+    private static final int REQUEST_CODE_FOLDER = 1001;
+
     private PreferenceManager prefManager;
     private TextView tvDefaultFolder;
     private Button btnSelectFolder;
     private Button btnClearFolder;
-
-    private ActivityResultLauncher<Void> folderPickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,27 +33,7 @@ public class SettingsActivity extends AppCompatActivity {
         btnSelectFolder = findViewById(R.id.btn_select_folder);
         btnClearFolder = findViewById(R.id.btn_clear_folder);
 
-        // 显式指定泛型参数，避免类型推断冲突
-        folderPickerLauncher = this.<Void, Uri>registerForActivityResult(
-                new ActivityResultContracts.OpenDocumentTree(),
-                new ActivityResultCallback<Uri>() {
-                    @Override
-                    public void onActivityResult(Uri uri) {
-                        if (uri != null) {
-                            getContentResolver().takePersistableUriPermission(uri,
-                                    Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                            String uriString = uri.toString();
-                            prefManager.saveDefaultFolderUri(uriString);
-                            prefManager.saveLastScanUri(uriString);
-                            updateDisplay();
-                            Toast.makeText(SettingsActivity.this, "Default folder updated", Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                }
-        );
-
-        btnSelectFolder.setOnClickListener(v -> folderPickerLauncher.launch(null));
-
+        btnSelectFolder.setOnClickListener(v -> openFolderPicker());
         btnClearFolder.setOnClickListener(v -> {
             prefManager.saveDefaultFolderUri(null);
             updateDisplay();
@@ -63,6 +41,28 @@ public class SettingsActivity extends AppCompatActivity {
         });
 
         updateDisplay();
+    }
+
+    private void openFolderPicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        startActivityForResult(intent, REQUEST_CODE_FOLDER);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE_FOLDER && resultCode == RESULT_OK && data != null) {
+            Uri uri = data.getData();
+            if (uri != null) {
+                getContentResolver().takePersistableUriPermission(uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                String uriString = uri.toString();
+                prefManager.saveDefaultFolderUri(uriString);
+                prefManager.saveLastScanUri(uriString);
+                updateDisplay();
+                Toast.makeText(this, "Default folder updated", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     private void updateDisplay() {
