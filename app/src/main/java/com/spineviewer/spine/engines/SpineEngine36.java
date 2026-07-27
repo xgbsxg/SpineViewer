@@ -105,7 +105,7 @@ public class SpineEngine36 extends AbstractSpineEngine {
             Animation anim = entry.getAnimation();
             if (anim != null) {
                 duration = anim.getDuration();
-                float time = entry.getTime();
+                float time = entry.time;
                 if (duration > 0) {
                     progress = Math.min(time / duration, 1f);
                 }
@@ -206,7 +206,7 @@ public class SpineEngine36 extends AbstractSpineEngine {
             if (anim != null) {
                 float duration = anim.getDuration();
                 float time = position * duration;
-                entry.setTime(time);
+                entry.time = time;
                 animationState.apply(skeleton);
                 skeleton.updateWorldTransform();
             }
