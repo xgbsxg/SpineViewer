@@ -14,6 +14,7 @@ import com.spineviewer.spine.runtime.v21.SkeletonJson;
 import com.spineviewer.spine.runtime.v21.SkeletonRenderer;
 import com.spineviewer.spine.runtime.v21.SkeletonRendererDebug;
 import com.spineviewer.spine.runtime.v21.Skin;
+import com.spineviewer.spine.runtime.v21.AnimationState.TrackEntry;
 
 import com.spineviewer.spine.SpineVersion;
 
@@ -92,12 +93,15 @@ public class SpineEngine21 extends AbstractSpineEngine {
 
         float duration = 0f;
         float progress = 0f;
-        if (animationState != null) {
-            com.spineviewer.spine.runtime.v21.Animation current = animationState.getCurrent(0);
-            if (current != null) {
-                duration = current.getDuration();
-                progress = animationState.getCurrent(0).getTime() / duration;
-                if (progress > 1f) progress = 1f;
+        TrackEntry entry = animationState.getCurrent(0);
+        if (entry != null) {
+            Animation anim = entry.getAnimation();
+            if (anim != null) {
+                duration = anim.getDuration();
+                float time = entry.getTime();
+                if (duration > 0) {
+                    progress = Math.min(time / duration, 1f);
+                }
             }
         }
         updateProgress(progress, duration);
@@ -178,13 +182,16 @@ public class SpineEngine21 extends AbstractSpineEngine {
     @Override
     public void setAnimationPosition(float position) {
         if (animationState == null) return;
-        com.spineviewer.spine.runtime.v21.Animation current = animationState.getCurrent(0);
-        if (current != null) {
-            float duration = current.getDuration();
-            float time = position * duration;
-            animationState.getCurrent(0).setTime(time);
-            animationState.apply(skeleton);
-            skeleton.updateWorldTransform();
+        TrackEntry entry = animationState.getCurrent(0);
+        if (entry != null) {
+            Animation anim = entry.getAnimation();
+            if (anim != null) {
+                float duration = anim.getDuration();
+                float time = position * duration;
+                entry.setTime(time);
+                animationState.apply(skeleton);
+                skeleton.updateWorldTransform();
+            }
         }
     }
 
