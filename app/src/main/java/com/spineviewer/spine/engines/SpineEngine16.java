@@ -21,10 +21,6 @@ import com.spineviewer.spine.SpineVersion;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Spine 1.6 viewer engine.
- * Uses the bundled spine-libgdx-1.6 runtime.
- */
 public class SpineEngine16 extends AbstractSpineEngine {
 
     private TextureAtlas textureAtlas;
@@ -40,7 +36,7 @@ public class SpineEngine16 extends AbstractSpineEngine {
         version = SpineVersion.V1_6;
 
         skeletonRenderer = new SkeletonRenderer();
-        skeletonRenderer.setPremultipliedAlpha(false);
+        skeletonRenderer.setPremultipliedAlpha(premultipliedAlpha);
         debugRenderer = new SkeletonRendererDebug();
 
         if (atlasFileHandle == null) {
@@ -96,6 +92,19 @@ public class SpineEngine16 extends AbstractSpineEngine {
         batch.begin();
         skeletonRenderer.draw(batch, skeleton);
         batch.end();
+
+        // 更新进度
+        float duration = 0f;
+        float progress = 0f;
+        if (animationState != null) {
+            com.spineviewer.spine.runtime.v16.Animation current = animationState.getCurrent(0);
+            if (current != null) {
+                duration = current.getDuration();
+                progress = animationState.getCurrent(0).getTime() / duration;
+                if (progress > 1f) progress = 1f;
+            }
+        }
+        updateProgress(progress, duration);
     }
 
     @Override
@@ -108,8 +117,13 @@ public class SpineEngine16 extends AbstractSpineEngine {
 
     @Override
     public void setAnimation(String name, boolean loop) {
-        currentAnimation = name; looping = loop;
-        if (animationState != null) animationState.setAnimation(0, name, loop);
+        currentAnimation = name;
+        looping = loop;
+        if (animationState != null) {
+            animationState.setAnimation(0, name, loop);
+            // 重置进度
+            updateProgress(0f, getAnimationDuration());
+        }
     }
 
     @Override
@@ -143,8 +157,42 @@ public class SpineEngine16 extends AbstractSpineEngine {
         skeleton.setSlotsToSetupPose();
     }
 
-    @Override public List<String> getAnimations() { return animationNames; }
-    @Override public List<String> getSkins() { return skinNames; }
+    @Override
+    public List<String> getAnimations() { return animationNames; }
+    @Override
+    public List<String> getSkins() { return skinNames; }
+
+    @Override
+    public void setPremultipliedAlpha(boolean enabled) {
+        premultipliedAlpha = enabled;
+        if (skeletonRenderer != null) {
+            skeletonRenderer.setPremultipliedAlpha(enabled);
+        }
+    }
+
+    @Override
+    public float getAnimationProgress() {
+        return animProgress;
+    }
+
+    @Override
+    public float getAnimationDuration() {
+        return animDuration;
+    }
+
+    @Override
+    public void setAnimationPosition(float position) {
+        if (animationState == null) return;
+        com.spineviewer.spine.runtime.v16.Animation current = animationState.getCurrent(0);
+        if (current != null) {
+            float duration = current.getDuration();
+            float time = position * duration;
+            animationState.getCurrent(0).setTime(time);
+            // 强制应用一次
+            animationState.apply(skeleton);
+            skeleton.updateWorldTransform();
+        }
+    }
 
     @Override
     public void dispose() {
