@@ -12,7 +12,7 @@
     <item
         android:id="@+id/action_refresh"
         android:title="@string/refresh"
-        android:icon="@android:drawable/ic_menu_revert"
+        android:icon="@drawable/ic_shuaxin"
         app:showAsAction="ifRoom" />
 
     <item
