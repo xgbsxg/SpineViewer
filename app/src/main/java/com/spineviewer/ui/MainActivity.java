@@ -69,10 +69,12 @@ public class MainActivity extends AppCompatActivity
                 new ActivityResultContracts.OpenDocumentTree(),
                 uri -> {
                     if (uri != null) {
+                        // 持久化权限
                         getContentResolver().takePersistableUriPermission(uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         prefManager.saveDefaultFolderUri(uri.toString());
                         prefManager.saveLastScanUri(uri.toString());
+                        // 立即扫描
                         scanFolder(uri);
                     }
                 });
@@ -109,9 +111,27 @@ public class MainActivity extends AppCompatActivity
             if (uri != null) {
                 scanFolder(uri);
             }
+        } else {
+            // 首次启动，显示引导对话框
+            if (fileList.isEmpty()) {
+                showWelcomeDialog();
+            }
         }
 
         updateEmptyView();
+    }
+
+    private void showWelcomeDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.welcome_title)
+                .setMessage(R.string.welcome_message)
+                .setPositiveButton(R.string.go_to_settings, (dialog, which) -> {
+                    Intent intent = new Intent(this, SettingsActivity.class);
+                    startActivity(intent);
+                })
+                .setNegativeButton(R.string.later, null)
+                .setCancelable(false)
+                .show();
     }
 
     private void loadPersistedList() {
