@@ -162,7 +162,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void openSettings() {
-        Toast.makeText(this, "Settings will be implemented in next step", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, SettingsActivity.class);
+        startActivity(intent);
     }
 
     private void clearList() {
