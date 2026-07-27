@@ -22,7 +22,6 @@ import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.spineviewer.R;
 import com.spineviewer.spine.SpineFileDetector;
 import com.spineviewer.spine.SpineFileInfo;
@@ -65,9 +64,7 @@ public class MainActivity extends AppCompatActivity
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        FloatingActionButton fab = findViewById(R.id.fab_open);
-        fab.setOnClickListener(v -> openFolderPicker());
-
+        // 注册文件夹选择器
         folderPickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
                 uri -> {
@@ -80,6 +77,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
 
+        // 注册文件选择器（单个文件）
         filePicker = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -88,6 +86,7 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
 
+        // 权限请求
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
@@ -96,13 +95,14 @@ public class MainActivity extends AppCompatActivity
                         if (!v) { granted = false; break; }
                     }
                     if (granted) openFolderPicker();
-                    else Toast.makeText(this, "Storage permission needed to browse files", Toast.LENGTH_LONG).show();
+                    else Toast.makeText(this, "需要存储权限才能浏览文件", Toast.LENGTH_LONG).show();
                 });
 
         handleIncomingIntent(getIntent());
 
         loadPersistedList();
 
+        // 如果有默认文件夹，自动扫描
         String defaultUri = prefManager.getDefaultFolderUri();
         if (defaultUri != null) {
             Uri uri = Uri.parse(defaultUri);
@@ -171,7 +171,7 @@ public class MainActivity extends AppCompatActivity
         adapter.setItems(fileList);
         prefManager.clearFileList();
         updateEmptyView();
-        Toast.makeText(this, "List cleared", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "列表已清空", Toast.LENGTH_SHORT).show();
     }
 
     private void openFolderPicker() {
@@ -214,9 +214,9 @@ public class MainActivity extends AppCompatActivity
                     prefManager.saveFileList(fileList);
                     adapter.setItems(fileList);
                     updateEmptyView();
-                    Toast.makeText(this, "Found " + found.size() + " Spine skeleton(s)", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "找到 " + found.size() + " 个 Spine 骨骼文件", Toast.LENGTH_SHORT).show();
                 } else {
-                    Toast.makeText(this, "No Spine files found in selected folder", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, "所选文件夹中未找到 Spine 文件", Toast.LENGTH_SHORT).show();
                 }
             });
         }).start();
@@ -278,14 +278,14 @@ public class MainActivity extends AppCompatActivity
         }
 
         new AlertDialog.Builder(this)
-                .setTitle("Select Runtime Version for: " + info.name)
+                .setTitle("选择运行时版本: " + info.name)
                 .setSingleChoiceItems(labels, currentIdx, (dialog, which) -> {
                     info.selectedVersion = versions[which];
                     prefManager.saveFileList(fileList);
                     adapter.notifyItemChanged(position);
                     dialog.dismiss();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("取消", null)
                 .show();
     }
 
