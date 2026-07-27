@@ -15,8 +15,9 @@
         app:showAsAction="never" />
 
     <item
-        android:id="@+id/action_clear"
-        android:title="Clear List"
-        app:showAsAction="never" />
+        android:id="@+id/action_settings"
+        android:title="Settings"
+        android:icon="@android:drawable/ic_menu_preferences"
+        app:showAsAction="ifRoom" />
 
 </menu>
