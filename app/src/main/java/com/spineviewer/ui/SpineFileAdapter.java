@@ -21,6 +21,7 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
     public interface OnFileClickListener {
         void onFileClick(SpineFileInfo info);
         void onVersionChangeClick(SpineFileInfo info, int position);
+        void onFileLongClick(SpineFileInfo info, int position);
     }
 
     private final Context context;
@@ -71,10 +72,8 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
         holder.nameText.setText(info.name);
         holder.versionText.setText(info.getVersionLabel());
 
-        // Format indicator
         holder.formatBadge.setText(info.isBinary ? "SKEL" : "JSON");
 
-        // Atlas indicator
         if (info.hasAtlas()) {
             holder.atlasStatus.setVisibility(View.VISIBLE);
             holder.atlasStatus.setText("✓ Atlas");
@@ -83,7 +82,6 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
             holder.atlasStatus.setText("⚠ No atlas");
         }
 
-        // Version detection confidence
         if (info.detectedVersion == null) {
             holder.detectionBadge.setVisibility(View.VISIBLE);
             holder.detectionBadge.setText("? Auto-detect failed");
@@ -97,6 +95,12 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
         holder.itemView.setOnClickListener(v -> listener.onFileClick(info));
         holder.changeVersionBtn.setOnClickListener(v ->
                 listener.onVersionChangeClick(info, holder.getAdapterPosition()));
+
+        // 长按删除
+        holder.itemView.setOnLongClickListener(v -> {
+            listener.onFileLongClick(info, holder.getAdapterPosition());
+            return true;
+        });
     }
 
     @Override
