@@ -43,7 +43,7 @@ public class SpinePreviewActivity extends AndroidApplication
     private android.widget.Button btnSkin;
     private SeekBar seekTimeScale;
     private TextView tvTimeScale, tvStatus, tvVersion;
-    private Switch switchLoop, switchPremultiply;
+    private Switch switchPremultiply;
     private ImageButton btnTogglePanel, btnResetCamera, btnShowBones;
     private ImageButton btnPause, btnPrev, btnNext, btnChangeVersion;
 
@@ -84,7 +84,6 @@ public class SpinePreviewActivity extends AndroidApplication
         tvTimeScale      = findViewById(R.id.tv_time_scale);
         tvStatus         = findViewById(R.id.tv_status);
         tvVersion        = findViewById(R.id.tv_version_badge);
-        switchLoop       = findViewById(R.id.switch_loop);
         switchPremultiply= findViewById(R.id.switch_premultiply);
         btnTogglePanel   = findViewById(R.id.btn_toggle_panel);
         btnResetCamera   = findViewById(R.id.btn_reset_camera);
@@ -95,7 +94,7 @@ public class SpinePreviewActivity extends AndroidApplication
         btnChangeVersion = findViewById(R.id.btn_change_version);
 
         tvVersion.setText("v" + currentVersion.getDisplayName());
-        tvStatus.setText("Loading…");
+        tvStatus.setText(R.string.loading);
 
         seekTimeScale.setMax(19);
         seekTimeScale.setProgress(9);
@@ -110,10 +109,8 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onStopTrackingTouch(SeekBar s) {}
         });
 
-        switchLoop.setChecked(true);
-        switchLoop.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (engine != null) engine.setLooping(isChecked);
-        });
+        // 默认启用循环，无需开关
+        if (engine != null) engine.setLooping(true);
 
         switchPremultiply.setChecked(false);
         switchPremultiply.setOnCheckedChangeListener((buttonView, isChecked) -> {
@@ -155,7 +152,8 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 currentAnimIdx = pos;
                 if (animations != null && engine != null) {
-                    engine.setAnimation(animations.get(pos), switchLoop.isChecked());
+                    // 始终循环
+                    engine.setAnimation(animations.get(pos), true);
                 }
             }
             @Override public void onNothingSelected(AdapterView<?> p) {}
@@ -178,7 +176,7 @@ public class SpinePreviewActivity extends AndroidApplication
 
         currentVersion = version;
         tvVersion.setText("v" + version.getDisplayName());
-        tvStatus.setText("Loading…");
+        tvStatus.setText(R.string.loading);
 
         engine = SpineEngineFactory.create(version);
         engine.init(this,
@@ -187,6 +185,8 @@ public class SpinePreviewActivity extends AndroidApplication
                 version,
                 textureUris);
         engine.setStateListener(this);
+        // 默认循环
+        engine.setLooping(true);
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         config.useGL30 = false;
@@ -227,7 +227,7 @@ public class SpinePreviewActivity extends AndroidApplication
         currentAnimIdx = (currentAnimIdx + dir + animations.size()) % animations.size();
         spinnerAnimation.setSelection(currentAnimIdx);
         if (engine != null) {
-            engine.setAnimation(animations.get(currentAnimIdx), switchLoop.isChecked());
+            engine.setAnimation(animations.get(currentAnimIdx), true);
         }
     }
 
@@ -240,14 +240,14 @@ public class SpinePreviewActivity extends AndroidApplication
             if (versions[i] == currentVersion) sel = i;
         }
         new AlertDialog.Builder(this)
-                .setTitle("Switch Runtime Version")
+                .setTitle(R.string.switch_version)
                 .setSingleChoiceItems(labels, sel, (dialog, which) -> {
                     dialog.dismiss();
                     if (versions[which] != currentVersion) {
                         launchEngine(versions[which]);
                     }
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(R.string.close, null)
                 .show();
     }
 
@@ -260,8 +260,8 @@ public class SpinePreviewActivity extends AndroidApplication
         if (!skins.isEmpty()) selectedSkins[0] = true;
 
         runOnUiThread(() -> {
-            tvStatus.setText("✓  " + animations.size() + " animations  •  "
-                    + skins.size() + " skins");
+            tvStatus.setText("✓  " + animations.size() + " 个动画  •  "
+                    + skins.size() + " 个皮肤");
             tvVersion.setText("v" + version.getDisplayName());
 
             ArrayAdapter<String> animAdapter = new ArrayAdapter<>(this,
@@ -281,11 +281,11 @@ public class SpinePreviewActivity extends AndroidApplication
         for (int i = 0; i < skins.size(); i++) checked[i] = selectedSkins[i];
 
         new AlertDialog.Builder(this)
-                .setTitle("Select Skins (multi-select)")
+                .setTitle("选择皮肤（多选）")
                 .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
                     checked[which] = isChecked;
                 })
-                .setPositiveButton("Apply", (dialog, which) -> {
+                .setPositiveButton("应用", (dialog, which) -> {
                     boolean anySelected = false;
                     for (boolean b : checked) if (b) { anySelected = true; break; }
                     if (!anySelected && checked.length > 0) checked[0] = true;
@@ -293,7 +293,7 @@ public class SpinePreviewActivity extends AndroidApplication
                     updateSkinButton();
                     applySelectedSkins();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton("取消", null)
                 .show();
     }
 
@@ -304,11 +304,11 @@ public class SpinePreviewActivity extends AndroidApplication
             if (i < selectedSkins.length && selectedSkins[i]) active.add(skins.get(i));
         }
         if (active.isEmpty()) {
-            btnSkin.setText("none");
+            btnSkin.setText("无");
         } else if (active.size() == 1) {
             btnSkin.setText(active.get(0));
         } else {
-            btnSkin.setText(active.size() + " skins selected");
+            btnSkin.setText(active.size() + " 个皮肤已选");
         }
     }
 
@@ -328,10 +328,10 @@ public class SpinePreviewActivity extends AndroidApplication
         runOnUiThread(() -> {
             tvStatus.setText("⚠ " + message);
             new AlertDialog.Builder(this)
-                    .setTitle("Load Error — Spine " + currentVersion.getDisplayName())
-                    .setMessage(message + "\n\nTry a different runtime version?")
-                    .setPositiveButton("Switch Version", (d, w) -> showVersionPicker())
-                    .setNegativeButton("Close", (d, w) -> finish())
+                    .setTitle(R.string.load_error + " — Spine " + currentVersion.getDisplayName())
+                    .setMessage(message + "\n\n" + getString(R.string.try_switch_version))
+                    .setPositiveButton(R.string.switch_version, (d, w) -> showVersionPicker())
+                    .setNegativeButton(R.string.close, (d, w) -> finish())
                     .show();
         });
     }
