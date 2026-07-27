@@ -41,7 +41,6 @@ public class MainActivity extends AppCompatActivity
     private View loadingView;
     private List<SpineFileInfo> fileList = new ArrayList<>();
     private PreferenceManager prefManager;
-    private boolean isFirstLaunch = true;
 
     private ActivityResultLauncher<Uri> folderPickerLauncher;
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -106,11 +105,11 @@ public class MainActivity extends AppCompatActivity
             if (uri != null) {
                 scanFolder(uri);
             }
-        }
-
-        // 首次启动且列表为空且无默认文件夹时显示引导弹窗
-        if (fileList.isEmpty() && defaultUri == null) {
-            showWelcomeDialog();
+        } else {
+            // 首次启动，显示引导对话框
+            if (fileList.isEmpty()) {
+                showWelcomeDialog();
+            }
         }
 
         updateEmptyView();
@@ -242,6 +241,7 @@ public class MainActivity extends AppCompatActivity
             runOnUiThread(() -> {
                 loadingView.setVisibility(View.GONE);
                 if (!found.isEmpty()) {
+                    // 合并结果：保留持久化列表，但替换为扫描结果
                     fileList.clear();
                     fileList.addAll(found);
                     prefManager.saveFileList(fileList);
@@ -287,6 +287,22 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onVersionChangeClick(SpineFileInfo info, int position) {
         showVersionPicker(info, position);
+    }
+
+    @Override
+    public void onFileLongClick(SpineFileInfo info, int position) {
+        new AlertDialog.Builder(this)
+                .setTitle("删除条目")
+                .setMessage("确定要删除 \"" + info.name + "\" 吗？")
+                .setPositiveButton("删除", (dialog, which) -> {
+                    fileList.remove(position);
+                    adapter.setItems(fileList);
+                    prefManager.saveFileList(fileList);
+                    updateEmptyView();
+                    Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show();
+                })
+                .setNegativeButton("取消", null)
+                .show();
     }
 
     private void openPreview(SpineFileInfo info) {
