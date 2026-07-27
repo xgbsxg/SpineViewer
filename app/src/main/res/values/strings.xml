@@ -6,6 +6,12 @@
     <string name="search">搜索</string>
     <string name="clear_list">清除列表</string>
     <string name="change_version">切换版本</string>
+    <string name="settings">设置</string>
+    <string name="default_folder">默认文件夹</string>
+    <string name="select_folder">选择文件夹</string>
+    <string name="clear_default">清除默认</string>
+    <string name="no_default_folder">未设置默认文件夹</string>
+    <string name="current_folder">当前：</string>
 
     <!-- item_spine_file defaults -->
     <string name="default_format">JSON</string>
@@ -17,7 +23,7 @@
     <!-- activity_main -->
     <string name="empty_icon">🦴</string>
     <string name="empty_title">暂无 Spine 文件</string>
-    <string name="empty_body">点击 + 按钮打开包含 .json 或 .skel 骨骼文件的文件夹</string>
+    <string name="empty_body">点击右上角“打开文件”或从其他应用打开 .json/.skel 文件</string>
     <string name="scanning">正在扫描 Spine 文件…</string>
 
     <!-- activity_spine_preview -->
@@ -26,4 +32,17 @@
     <string name="label_skin">皮肤</string>
     <string name="label_speed">速度</string>
     <string name="default_speed">1.0×</string>
+    <string name="premultiply_alpha">预乘 Alpha</string>
+    <string name="toggle_controls">切换控制面板</string>
+    <string name="reset_camera">重置视角</string>
+    <string name="toggle_bones">显示骨骼</string>
+    <string name="pause_play">暂停/播放</string>
+    <string name="previous_animation">上一个动画</string>
+    <string name="next_animation">下一个动画</string>
+    <string name="switch_version">切换版本</string>
+    <string name="back">返回</string>
+    <string name="load_error">加载错误</string>
+    <string name="try_switch_version">尝试切换运行时版本？</string>
+    <string name="close">关闭</string>
+    <string name="version_label">版本</string>
 </resources>
