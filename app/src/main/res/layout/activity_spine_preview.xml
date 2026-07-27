@@ -20,7 +20,6 @@
         android:background="@color/overlay_top"
         android:gravity="center_vertical">
 
-        <!-- Back button -->
         <ImageButton
             android:id="@+id/btn_back"
             android:layout_width="40dp"
@@ -31,7 +30,6 @@
             android:contentDescription="Back"
             android:onClick="finish" />
 
-        <!-- Status text -->
         <TextView
             android:id="@+id/tv_status"
             android:layout_width="0dp"
@@ -44,7 +42,6 @@
             android:layout_marginHorizontal="8dp"
             android:text="@string/loading" />
 
-        <!-- Version badge -->
         <TextView
             android:id="@+id/tv_version_badge"
             android:layout_width="wrap_content"
@@ -58,7 +55,6 @@
             android:layout_marginEnd="4dp"
             android:text="@string/default_version_badge" />
 
-        <!-- Change version -->
         <ImageButton
             android:id="@+id/btn_change_version"
             android:layout_width="40dp"
@@ -68,7 +64,6 @@
             android:tint="@android:color/white"
             android:contentDescription="Change version" />
 
-        <!-- Reset camera -->
         <ImageButton
             android:id="@+id/btn_reset_camera"
             android:layout_width="40dp"
@@ -78,7 +73,6 @@
             android:tint="@android:color/white"
             android:contentDescription="Reset camera" />
 
-        <!-- Show bones toggle -->
         <ImageButton
             android:id="@+id/btn_show_bones"
             android:layout_width="40dp"
@@ -89,7 +83,6 @@
             android:tint="@android:color/white"
             android:contentDescription="Toggle bones" />
 
-        <!-- Toggle panel -->
         <ImageButton
             android:id="@+id/btn_toggle_panel"
             android:layout_width="40dp"
@@ -196,7 +189,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -222,6 +216,80 @@
                 android:textSize="12sp"
                 android:gravity="end"
                 android:text="@string/default_speed" />
+
+        </LinearLayout>
+
+        <!-- Progress row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Progress"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:layout_marginEnd="8dp"
+                android:minWidth="40dp" />
+
+            <SeekBar
+                android:id="@+id/seek_progress"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginEnd="8dp"
+                android:max="1000" />
+
+            <TextView
+                android:id="@+id/tv_progress"
+                android:layout_width="40dp"
+                android:layout_height="wrap_content"
+                android:textColor="@android:color/white"
+                android:textSize="12sp"
+                android:gravity="end"
+                android:text="0%" />
+
+        </LinearLayout>
+
+        <!-- Toggle row: Loop, Premultiplied Alpha -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loop"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:layout_marginEnd="4dp" />
+
+            <Switch
+                android:id="@+id/switch_loop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="true"
+                android:layout_marginEnd="16dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Premultiply Alpha"
+                android:textColor="@android:color/white"
+                android:textSize="13sp"
+                android:layout_marginEnd="4dp" />
+
+            <Switch
+                android:id="@+id/switch_premultiply"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checked="false" />
 
         </LinearLayout>
 
