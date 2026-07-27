@@ -2,6 +2,8 @@ package com.spineviewer.ui;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
@@ -11,6 +13,7 @@ import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
 import android.widget.Spinner;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,13 +27,8 @@ import com.spineviewer.spine.SpineVersion;
 import com.spineviewer.spine.SpineViewerEngine;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-/**
- * Full-screen Spine animation preview.
- * Extends AndroidApplication to host the libGDX GL view.
- */
 public class SpinePreviewActivity extends AndroidApplication
         implements SpineViewerEngine.StateListener {
 
@@ -42,22 +40,21 @@ public class SpinePreviewActivity extends AndroidApplication
 
     private SpineViewerEngine engine;
 
-    // UI
     private View controlPanel;
     private Spinner spinnerAnimation;
     private android.widget.Button btnSkin;
     private SeekBar seekTimeScale;
-    private TextView tvTimeScale, tvStatus, tvVersion;
+    private SeekBar seekProgress;
+    private TextView tvTimeScale, tvProgress, tvStatus, tvVersion;
+    private Switch switchLoop, switchPremultiply;
     private ImageButton btnTogglePanel, btnResetCamera, btnShowBones;
     private ImageButton btnPause, btnPrev, btnNext, btnChangeVersion;
 
-    // Touch
     private ScaleGestureDetector scaleDetector;
     private float lastTouchX, lastTouchY;
     private boolean panelVisible = true;
     private boolean showBones = false;
 
-    // State
     private SpineVersion currentVersion;
     private String skeletonUriStr, atlasUriStr, skeletonName;
     private List<String> animations;
@@ -66,10 +63,13 @@ public class SpinePreviewActivity extends AndroidApplication
     private boolean[] selectedSkins;
     private ArrayList<Uri> textureUris;
 
+    private Handler mainHandler = new Handler(Looper.getMainLooper());
+    private Runnable progressUpdater;
+    private boolean isDraggingProgress = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // Set our custom layout (which includes the GL container + UI overlay)
         setContentView(R.layout.activity_spine_preview);
 
         skeletonUriStr = getIntent().getStringExtra(EXTRA_SKELETON_URI);
@@ -77,8 +77,7 @@ public class SpinePreviewActivity extends AndroidApplication
         String versionName = getIntent().getStringExtra(EXTRA_VERSION);
         skeletonName   = getIntent().getStringExtra(EXTRA_NAME);
         currentVersion = versionName != null ? SpineVersion.valueOf(versionName) : SpineVersion.latest();
-        textureUris    = 
-        getParcelableUriListCompat(getIntent(), EXTRA_TEXTURE_URIS);
+        textureUris    = getParcelableUriListCompat(getIntent(), EXTRA_TEXTURE_URIS);
 
         bindViews();
         launchEngine(currentVersion);
@@ -89,9 +88,13 @@ public class SpinePreviewActivity extends AndroidApplication
         spinnerAnimation = findViewById(R.id.spinner_animation);
         btnSkin          = findViewById(R.id.spinner_skin);
         seekTimeScale    = findViewById(R.id.seek_time_scale);
+        seekProgress     = findViewById(R.id.seek_progress);
         tvTimeScale      = findViewById(R.id.tv_time_scale);
+        tvProgress       = findViewById(R.id.tv_progress);
         tvStatus         = findViewById(R.id.tv_status);
         tvVersion        = findViewById(R.id.tv_version_badge);
+        switchLoop       = findViewById(R.id.switch_loop);
+        switchPremultiply= findViewById(R.id.switch_premultiply);
         btnTogglePanel   = findViewById(R.id.btn_toggle_panel);
         btnResetCamera   = findViewById(R.id.btn_reset_camera);
         btnShowBones     = findViewById(R.id.btn_show_bones);
@@ -116,6 +119,42 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onStopTrackingTouch(SeekBar s) {}
         });
 
+        switchLoop.setChecked(true);
+        switchLoop.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (engine != null) engine.setLooping(isChecked);
+        });
+
+        switchPremultiply.setChecked(false);
+        switchPremultiply.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            if (engine != null) engine.setPremultipliedAlpha(isChecked);
+        });
+
+        seekProgress.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                if (fromUser && engine != null && !isDraggingProgress) {
+                    float pos = progress / 1000f;
+                    engine.setAnimationPosition(pos);
+                    tvProgress.setText(String.format("%.1f%%", pos * 100));
+                }
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+                isDraggingProgress = true;
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                isDraggingProgress = false;
+                if (engine != null) {
+                    float pos = seekBar.getProgress() / 1000f;
+                    engine.setAnimationPosition(pos);
+                    tvProgress.setText(String.format("%.1f%%", pos * 100));
+                }
+            }
+        });
+
         btnTogglePanel.setOnClickListener(v -> {
             panelVisible = !panelVisible;
             controlPanel.setVisibility(panelVisible ? View.VISIBLE : View.GONE);
@@ -134,8 +173,8 @@ public class SpinePreviewActivity extends AndroidApplication
                 boolean newPaused = !engine.isPaused();
                 engine.setPaused(newPaused);
                 btnPause.setImageResource(newPaused
-                    ? android.R.drawable.ic_media_play
-                    : android.R.drawable.ic_media_pause);
+                        ? android.R.drawable.ic_media_play
+                        : android.R.drawable.ic_media_pause);
             }
         });
 
@@ -151,7 +190,7 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onItemSelected(AdapterView<?> p, View v, int pos, long id) {
                 currentAnimIdx = pos;
                 if (animations != null && engine != null) {
-                    engine.setAnimation(animations.get(pos), true);
+                    engine.setAnimation(animations.get(pos), switchLoop.isChecked());
                 }
             }
             @Override public void onNothingSelected(AdapterView<?> p) {}
@@ -159,7 +198,6 @@ public class SpinePreviewActivity extends AndroidApplication
 
         btnSkin.setOnClickListener(v -> showSkinPicker());
 
-        // Pinch-to-zoom
         scaleDetector = new ScaleGestureDetector(this,
                 new ScaleGestureDetector.SimpleOnScaleGestureListener() {
                     @Override public boolean onScale(ScaleGestureDetector d) {
@@ -167,10 +205,27 @@ public class SpinePreviewActivity extends AndroidApplication
                         return true;
                     }
                 });
+
+        // 进度更新任务
+        progressUpdater = new Runnable() {
+            @Override
+            public void run() {
+                if (engine != null && engine.isLoaded() && !isDraggingProgress) {
+                    float duration = engine.getAnimationDuration();
+                    float progress = engine.getAnimationProgress();
+                    if (duration > 0) {
+                        int prog = (int) (progress * 1000);
+                        seekProgress.setProgress(prog);
+                        tvProgress.setText(String.format("%.1f%%", progress * 100));
+                    }
+                }
+                mainHandler.postDelayed(this, 50);
+            }
+        };
+        mainHandler.post(progressUpdater);
     }
 
     private void launchEngine(SpineVersion version) {
-        // Remove old GL view if re-launching
         FrameLayout container = findViewById(R.id.gl_container);
         container.removeAllViews();
 
@@ -191,14 +246,12 @@ public class SpinePreviewActivity extends AndroidApplication
         config.numSamples = 2;
         config.disableAudio = true;
 
-        // initializeForView creates the GL surface; we embed it in our container
         View glView = initializeForView(engine, config);
         container.addView(glView, 0,
                 new FrameLayout.LayoutParams(
                         FrameLayout.LayoutParams.MATCH_PARENT,
                         FrameLayout.LayoutParams.MATCH_PARENT));
 
-        // Touch on GL view
         glView.setOnTouchListener(this::onGlTouch);
     }
 
@@ -226,7 +279,9 @@ public class SpinePreviewActivity extends AndroidApplication
         if (animations == null || animations.isEmpty()) return;
         currentAnimIdx = (currentAnimIdx + dir + animations.size()) % animations.size();
         spinnerAnimation.setSelection(currentAnimIdx);
-        if (engine != null) engine.setAnimation(animations.get(currentAnimIdx), true);
+        if (engine != null) {
+            engine.setAnimation(animations.get(currentAnimIdx), switchLoop.isChecked());
+        }
     }
 
     private void showVersionPicker() {
@@ -256,7 +311,6 @@ public class SpinePreviewActivity extends AndroidApplication
         this.animations = animations;
         this.skins = skins;
         this.currentVersion = version;
-        // Initialize: select the first skin by default
         selectedSkins = new boolean[skins.size()];
         if (!skins.isEmpty()) selectedSkins[0] = true;
 
@@ -272,6 +326,10 @@ public class SpinePreviewActivity extends AndroidApplication
 
             updateSkinButton();
             applySelectedSkins();
+
+            // 重置进度条
+            seekProgress.setProgress(0);
+            tvProgress.setText("0%");
         });
     }
 
@@ -287,7 +345,6 @@ public class SpinePreviewActivity extends AndroidApplication
                     checked[which] = isChecked;
                 })
                 .setPositiveButton("Apply", (dialog, which) -> {
-                    // Ensure at least one skin is selected
                     boolean anySelected = false;
                     for (boolean b : checked) if (b) { anySelected = true; break; }
                     if (!anySelected && checked.length > 0) checked[0] = true;
@@ -340,7 +397,13 @@ public class SpinePreviewActivity extends AndroidApplication
 
     @Override
     public void onAnimationComplete(String animationName) {}
-    /** Compat helper: safe on API 24+ and API 33+. */
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        mainHandler.removeCallbacks(progressUpdater);
+    }
+
     @SuppressWarnings({"deprecation", "unchecked"})
     private static ArrayList<Uri> getParcelableUriListCompat(android.content.Intent intent, String key) {
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
@@ -349,5 +412,4 @@ public class SpinePreviewActivity extends AndroidApplication
             return intent.getParcelableArrayListExtra(key);
         }
     }
-
 }
