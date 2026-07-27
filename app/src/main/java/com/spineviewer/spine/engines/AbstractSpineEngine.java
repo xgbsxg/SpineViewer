@@ -15,6 +15,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.PolygonSpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.BufferUtils;
 
 import com.spineviewer.spine.SpineViewerEngine;
 
@@ -22,6 +23,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,9 +56,16 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         camY = h / 3f;
         camera.position.set(camX, camY, 0);
 
-        maxTextureSize = Gdx.gl.glGetInteger(GL20.GL_MAX_TEXTURE_SIZE);
-        if (maxTextureSize <= 0) maxTextureSize = 2048;
-        Log.d(TAG, "Max texture size: " + maxTextureSize);
+        // 获取最大纹理尺寸
+        try {
+            IntBuffer buffer = BufferUtils.newIntBuffer(16);
+            Gdx.gl20.glGetIntegerv(GL20.GL_MAX_TEXTURE_SIZE, buffer);
+            maxTextureSize = buffer.get(0);
+            Log.d(TAG, "Max texture size: " + maxTextureSize);
+        } catch (Exception e) {
+            Log.w(TAG, "Failed to get max texture size, using default 2048", e);
+            maxTextureSize = 2048;
+        }
 
         try {
             cacheDir = new File(context.getCacheDir(), "spine_tmp");
