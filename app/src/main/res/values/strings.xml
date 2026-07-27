@@ -8,6 +8,7 @@
     <string name="clear_list">清除列表</string>
     <string name="settings">设置</string>
     <string name="search">搜索</string>
+    <string name="refresh">刷新</string>
     <string name="change_version">切换版本</string>
     <string name="empty_icon">🦴</string>
     <string name="empty_title">暂无 Spine 文件</string>
@@ -17,6 +18,7 @@
     <string name="need_permission">需要存储权限才能浏览文件</string>
     <string name="found_files">找到 %d 个 Spine 骨骼文件</string>
     <string name="no_files_found">所选文件夹中未找到 Spine 文件</string>
+    <string name="refreshing">正在刷新…</string>
 
     <!-- 首次启动引导 -->
     <string name="welcome_title">欢迎使用 Spine 查看器</string>
