@@ -85,9 +85,6 @@ public abstract class SpineViewerEngine implements ApplicationListener {
     public abstract List<String> getSkins();
 
     public abstract void setPremultipliedAlpha(boolean enabled);
-    public abstract float getAnimationProgress();
-    public abstract float getAnimationDuration();
-    public abstract void setAnimationPosition(float position);
 
     protected void notifyLoaded(List<String> animations, List<String> skins) {
         if (stateListener != null) {
