@@ -6,8 +6,6 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
-import android.provider.DocumentsContract;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -30,6 +28,7 @@ import com.spineviewer.spine.SpineFileDetector;
 import com.spineviewer.spine.SpineFileInfo;
 import com.spineviewer.spine.SpineVersion;
 import com.spineviewer.utils.FileScanner;
+import com.spineviewer.utils.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +43,7 @@ public class MainActivity extends AppCompatActivity
     private View emptyView;
     private View loadingView;
     private List<SpineFileInfo> fileList = new ArrayList<>();
+    private PreferenceManager prefManager;
 
     private ActivityResultLauncher<Uri> folderPickerLauncher;
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -57,6 +57,8 @@ public class MainActivity extends AppCompatActivity
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        prefManager = new PreferenceManager(this);
+
         recyclerView = findViewById(R.id.recycler_view);
         emptyView = findViewById(R.id.empty_view);
         loadingView = findViewById(R.id.loading_view);
@@ -65,22 +67,21 @@ public class MainActivity extends AppCompatActivity
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        // FAB to open folder picker
         FloatingActionButton fab = findViewById(R.id.fab_open);
         fab.setOnClickListener(v -> openFolderPicker());
 
-        // Register folder picker
         folderPickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
                 uri -> {
                     if (uri != null) {
                         getContentResolver().takePersistableUriPermission(uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        prefManager.saveDefaultFolderUri(uri.toString());
+                        prefManager.saveLastScanUri(uri.toString());
                         scanFolder(uri);
                     }
                 });
 
-        // Register file picker (for single file open)
         filePicker = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -89,7 +90,6 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
 
-        // Permission launcher
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
@@ -101,10 +101,29 @@ public class MainActivity extends AppCompatActivity
                     else Toast.makeText(this, "Storage permission needed to browse files", Toast.LENGTH_LONG).show();
                 });
 
-        // Handle intent (file opened from another app)
         handleIncomingIntent(getIntent());
 
+        loadPersistedList();
+
+        String defaultUri = prefManager.getDefaultFolderUri();
+        if (defaultUri != null) {
+            Uri uri = Uri.parse(defaultUri);
+            if (uri != null) {
+                scanFolder(uri);
+            }
+        }
+
         updateEmptyView();
+    }
+
+    private void loadPersistedList() {
+        List<SpineFileInfo> saved = prefManager.getFileList();
+        if (!saved.isEmpty()) {
+            fileList.clear();
+            fileList.addAll(saved);
+            adapter.setItems(fileList);
+            updateEmptyView();
+        }
     }
 
     @Override
@@ -122,22 +141,40 @@ public class MainActivity extends AppCompatActivity
                 return true;
             }
         });
+
+        menu.findItem(R.id.action_clear).setVisible(false);
+
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
-        if (item.getItemId() == R.id.action_open_file) {
+        int id = item.getItemId();
+        if (id == R.id.action_open_file) {
             filePicker.launch("*/*");
             return true;
         }
-        if (item.getItemId() == R.id.action_clear) {
-            fileList.clear();
-            adapter.notifyDataSetChanged();
-            updateEmptyView();
+        if (id == R.id.action_clear) {
+            clearList();
+            return true;
+        }
+        if (id == R.id.action_settings) {
+            openSettings();
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void openSettings() {
+        Toast.makeText(this, "Settings will be implemented in next step", Toast.LENGTH_SHORT).show();
+    }
+
+    private void clearList() {
+        fileList.clear();
+        adapter.setItems(fileList);
+        prefManager.clearFileList();
+        updateEmptyView();
+        Toast.makeText(this, "List cleared", Toast.LENGTH_SHORT).show();
     }
 
     private void openFolderPicker() {
@@ -174,16 +211,15 @@ public class MainActivity extends AppCompatActivity
             List<SpineFileInfo> found = FileScanner.scanForSpineFiles(this, treeUri);
             runOnUiThread(() -> {
                 loadingView.setVisibility(View.GONE);
-                // Add/merge new results
-                for (SpineFileInfo info : found) {
-                    if (!fileList.contains(info)) fileList.add(info);
-                }
-                adapter.setItems(fileList);
-                updateEmptyView();
-                if (found.isEmpty()) {
-                    Toast.makeText(this, "No Spine files found in selected folder", Toast.LENGTH_SHORT).show();
-                } else {
+                if (!found.isEmpty()) {
+                    fileList.clear();
+                    fileList.addAll(found);
+                    prefManager.saveFileList(fileList);
+                    adapter.setItems(fileList);
+                    updateEmptyView();
                     Toast.makeText(this, "Found " + found.size() + " Spine skeleton(s)", Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(this, "No Spine files found in selected folder", Toast.LENGTH_SHORT).show();
                 }
             });
         }).start();
@@ -198,7 +234,6 @@ public class MainActivity extends AppCompatActivity
             info.selectedVersion = result.detectedVersion;
             info.rawVersionString = result.rawVersionString;
             runOnUiThread(() -> {
-                // Open preview directly
                 openPreview(info);
             });
         }).start();
@@ -231,7 +266,7 @@ public class MainActivity extends AppCompatActivity
         intent.putExtra(SpinePreviewActivity.EXTRA_NAME, info.name);
         if (!info.siblingUris.isEmpty()) {
             intent.putParcelableArrayListExtra(SpinePreviewActivity.EXTRA_TEXTURE_URIS,
-                new java.util.ArrayList<>(info.siblingUris));
+                new ArrayList<>(info.siblingUris));
         }
         startActivity(intent);
     }
@@ -249,6 +284,7 @@ public class MainActivity extends AppCompatActivity
                 .setTitle("Select Runtime Version for: " + info.name)
                 .setSingleChoiceItems(labels, currentIdx, (dialog, which) -> {
                     info.selectedVersion = versions[which];
+                    prefManager.saveFileList(fileList);
                     adapter.notifyItemChanged(position);
                     dialog.dismiss();
                 })
