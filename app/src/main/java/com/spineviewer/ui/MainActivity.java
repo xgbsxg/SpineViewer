@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity
     private View loadingView;
     private List<SpineFileInfo> fileList = new ArrayList<>();
     private PreferenceManager prefManager;
+    private boolean isFirstLaunch = true;
 
     private ActivityResultLauncher<Uri> folderPickerLauncher;
     private ActivityResultLauncher<String[]> permissionLauncher;
@@ -64,22 +65,18 @@ public class MainActivity extends AppCompatActivity
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
 
-        // 注册文件夹选择器
         folderPickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
                 uri -> {
                     if (uri != null) {
-                        // 持久化权限
                         getContentResolver().takePersistableUriPermission(uri,
                                 Intent.FLAG_GRANT_READ_URI_PERMISSION);
                         prefManager.saveDefaultFolderUri(uri.toString());
                         prefManager.saveLastScanUri(uri.toString());
-                        // 立即扫描
                         scanFolder(uri);
                     }
                 });
 
-        // 注册文件选择器（单个文件）
         filePicker = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
@@ -88,7 +85,6 @@ public class MainActivity extends AppCompatActivity
                     }
                 });
 
-        // 权限请求
         permissionLauncher = registerForActivityResult(
                 new ActivityResultContracts.RequestMultiplePermissions(),
                 result -> {
@@ -104,18 +100,17 @@ public class MainActivity extends AppCompatActivity
 
         loadPersistedList();
 
-        // 如果有默认文件夹，自动扫描
         String defaultUri = prefManager.getDefaultFolderUri();
         if (defaultUri != null) {
             Uri uri = Uri.parse(defaultUri);
             if (uri != null) {
                 scanFolder(uri);
             }
-        } else {
-            // 首次启动，显示引导对话框
-            if (fileList.isEmpty()) {
-                showWelcomeDialog();
-            }
+        }
+
+        // 首次启动且列表为空且无默认文件夹时显示引导弹窗
+        if (fileList.isEmpty() && defaultUri == null) {
+            showWelcomeDialog();
         }
 
         updateEmptyView();
@@ -130,7 +125,7 @@ public class MainActivity extends AppCompatActivity
                     startActivity(intent);
                 })
                 .setNegativeButton(R.string.later, null)
-                .setCancelable(false)
+                .setCancelable(true)
                 .show();
     }
 
@@ -166,6 +161,10 @@ public class MainActivity extends AppCompatActivity
     @Override
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
+        if (id == R.id.action_refresh) {
+            refreshList();
+            return true;
+        }
         if (id == R.id.action_open_file) {
             filePicker.launch("*/*");
             return true;
@@ -179,6 +178,20 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void refreshList() {
+        String defaultUri = prefManager.getDefaultFolderUri();
+        if (defaultUri != null) {
+            Uri uri = Uri.parse(defaultUri);
+            if (uri != null) {
+                scanFolder(uri);
+            } else {
+                Toast.makeText(this, "默认文件夹无效，请重新设置", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(this, "请先在设置中选择默认文件夹", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void openSettings() {
