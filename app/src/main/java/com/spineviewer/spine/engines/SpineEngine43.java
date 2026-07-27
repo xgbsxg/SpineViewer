@@ -106,7 +106,7 @@ public class SpineEngine43 extends AbstractSpineEngine {
             Animation anim = entry.getAnimation();
             if (anim != null) {
                 duration = anim.getDuration();
-                float time = entry.getTime();
+                float time = entry.time;  // 直接访问 public 字段
                 if (duration > 0) {
                     progress = Math.min(time / duration, 1f);
                 }
@@ -193,7 +193,7 @@ public class SpineEngine43 extends AbstractSpineEngine {
             if (anim != null) {
                 float duration = anim.getDuration();
                 float time = position * duration;
-                entry.setTime(time);
+                entry.time = time;  // 直接赋值
                 animationState.apply(skeleton);
                 skeleton.updateWorldTransform(Physics.update);
             }
