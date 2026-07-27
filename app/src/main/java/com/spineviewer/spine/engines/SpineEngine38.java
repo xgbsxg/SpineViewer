@@ -2,7 +2,6 @@ package com.spineviewer.spine.engines;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Array;
 
 import com.spineviewer.spine.runtime.v38.Animation;
@@ -21,10 +20,6 @@ import com.spineviewer.spine.SpineVersion;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Spine 3.8 viewer engine.
- * Uses the bundled spine-libgdx-3.8 runtime.
- */
 public class SpineEngine38 extends AbstractSpineEngine {
 
     private TextureAtlas textureAtlas;
@@ -40,7 +35,7 @@ public class SpineEngine38 extends AbstractSpineEngine {
         version = SpineVersion.V3_8;
 
         skeletonRenderer = new SkeletonRenderer();
-        skeletonRenderer.setPremultipliedAlpha(false);
+        skeletonRenderer.setPremultipliedAlpha(premultipliedAlpha);
         debugRenderer = new SkeletonRendererDebug();
 
         if (atlasFileHandle == null) {
@@ -48,7 +43,6 @@ public class SpineEngine38 extends AbstractSpineEngine {
         }
         textureAtlas = new TextureAtlas(atlasFileHandle);
 
-        // Determine format and load skeleton data
         SkeletonData skeletonData;
         String fname = skeletonFileHandle.name().toLowerCase();
         if (fname.endsWith(".skel") || fname.endsWith(".bytes")) {
@@ -61,19 +55,16 @@ public class SpineEngine38 extends AbstractSpineEngine {
             skeletonData = json.readSkeletonData(skeletonFileHandle);
         }
 
-        // Collect animation names
         Array<Animation> anims = skeletonData.getAnimations();
         for (int i = 0; i < anims.size; i++) {
             animationNames.add(anims.get(i).getName());
         }
 
-        // Collect skin names
         Array<Skin> skins = skeletonData.getSkins();
         for (int i = 0; i < skins.size; i++) {
             skinNames.add(skins.get(i).getName());
         }
 
-        // Build skeleton and center on screen
         skeleton = new Skeleton(skeletonData);
         skeleton.setToSetupPose();
         skeleton.updateWorldTransform();
@@ -85,7 +76,6 @@ public class SpineEngine38 extends AbstractSpineEngine {
         camY = skeletonY;
         if (camera != null) camera.position.set(camX, camY, 0);
 
-        // Set up animation state
         AnimationStateData stateData = new AnimationStateData(skeletonData);
         animationState = new AnimationState(stateData);
         if (!animationNames.isEmpty()) {
@@ -106,6 +96,18 @@ public class SpineEngine38 extends AbstractSpineEngine {
         batch.begin();
         skeletonRenderer.draw(batch, skeleton);
         batch.end();
+
+        float duration = 0f;
+        float progress = 0f;
+        if (animationState != null) {
+            com.spineviewer.spine.runtime.v38.Animation current = animationState.getCurrent(0);
+            if (current != null) {
+                duration = current.getDuration();
+                progress = animationState.getCurrent(0).getTime() / duration;
+                if (progress > 1f) progress = 1f;
+            }
+        }
+        updateProgress(progress, duration);
     }
 
     @Override
@@ -122,6 +124,7 @@ public class SpineEngine38 extends AbstractSpineEngine {
         looping = loop;
         if (animationState != null) {
             animationState.setAnimation(0, name, loop);
+            updateProgress(0f, getAnimationDuration());
         }
     }
 
@@ -137,14 +140,12 @@ public class SpineEngine38 extends AbstractSpineEngine {
     public void setSkins(List<String> skinNames) {
         if (skeleton == null || skinNames == null || skinNames.isEmpty()) return;
         if (skinNames.size() == 1) { setSkin(skinNames.get(0)); return; }
-        // Build combined skin in reverse order: last selected first for priority
         Skin combined = new Skin("combined");
         for (int i = skinNames.size() - 1; i >= 0; i--) {
             Skin skin = skeleton.getData().findSkin(skinNames.get(i));
             if (skin != null) combined.addSkin(skin);
         }
         skeleton.setSkin(combined);
-        // For each slot, use the best attachment from the combined skin
         var slots = skeleton.getSlots();
         for (int i = 0, n = slots.size; i < n; i++) {
             boolean found = false;
@@ -161,9 +162,39 @@ public class SpineEngine38 extends AbstractSpineEngine {
 
     @Override
     public List<String> getAnimations() { return animationNames; }
-
     @Override
     public List<String> getSkins() { return skinNames; }
+
+    @Override
+    public void setPremultipliedAlpha(boolean enabled) {
+        premultipliedAlpha = enabled;
+        if (skeletonRenderer != null) {
+            skeletonRenderer.setPremultipliedAlpha(enabled);
+        }
+    }
+
+    @Override
+    public float getAnimationProgress() {
+        return animProgress;
+    }
+
+    @Override
+    public float getAnimationDuration() {
+        return animDuration;
+    }
+
+    @Override
+    public void setAnimationPosition(float position) {
+        if (animationState == null) return;
+        com.spineviewer.spine.runtime.v38.Animation current = animationState.getCurrent(0);
+        if (current != null) {
+            float duration = current.getDuration();
+            float time = position * duration;
+            animationState.getCurrent(0).setTime(time);
+            animationState.apply(skeleton);
+            skeleton.updateWorldTransform();
+        }
+    }
 
     @Override
     public void dispose() {
