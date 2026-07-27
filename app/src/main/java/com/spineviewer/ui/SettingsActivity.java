@@ -21,7 +21,7 @@ public class SettingsActivity extends AppCompatActivity {
     private Button btnSelectFolder;
     private Button btnClearFolder;
 
-    private ActivityResultLauncher<String> folderPickerLauncher;
+    private ActivityResultLauncher<Void> folderPickerLauncher;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
