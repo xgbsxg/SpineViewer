@@ -15,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/surface"
-            app:title="Spine Viewer"
+            app:title="@string/app_name"
             app:titleTextColor="@color/text_primary"
             app:layout_scrollFlags="scroll|enterAlways" />
 
@@ -31,7 +31,6 @@
             android:id="@+id/recycler_view"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingBottom="80dp"
             android:clipToPadding="false" />
 
         <!-- Empty state -->
@@ -93,15 +92,5 @@
         </LinearLayout>
 
     </FrameLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_open"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
-        android:layout_margin="16dp"
-        android:contentDescription="Open folder"
-        app:srcCompat="@android:drawable/ic_menu_add"
-        app:backgroundTint="@color/accent" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
