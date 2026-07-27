@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.documentfile.provider.DocumentFile;
 
 import com.spineviewer.R;
 import com.spineviewer.utils.PreferenceManager;
@@ -66,9 +67,19 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void updateDisplay() {
-        String uri = prefManager.getDefaultFolderUri();
-        if (uri != null) {
-            tvDefaultFolder.setText(getString(R.string.current_folder, uri));
+        String uriString = prefManager.getDefaultFolderUri();
+        if (uriString != null) {
+            try {
+                Uri uri = Uri.parse(uriString);
+                DocumentFile doc = DocumentFile.fromTreeUri(this, uri);
+                if (doc != null && doc.getName() != null) {
+                    tvDefaultFolder.setText(getString(R.string.current_folder, doc.getName()));
+                } else {
+                    tvDefaultFolder.setText(getString(R.string.current_folder, uriString));
+                }
+            } catch (Exception e) {
+                tvDefaultFolder.setText(getString(R.string.current_folder, uriString));
+            }
         } else {
             tvDefaultFolder.setText(R.string.no_default_folder);
         }
