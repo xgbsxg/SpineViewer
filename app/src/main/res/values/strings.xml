@@ -8,6 +8,7 @@
     <string name="clear_list">清除列表</string>
     <string name="settings">设置</string>
     <string name="search">搜索</string>
+    <string name="change_version">切换版本</string>
     <string name="empty_icon">🦴</string>
     <string name="empty_title">暂无 Spine 文件</string>
     <string name="empty_body">点击右上角“打开文件”或从其他应用打开 .json/.skel 文件</string>
