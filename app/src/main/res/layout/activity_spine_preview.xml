@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     android:background="@color/bg_dark">
 
-    <!-- libGDX GL surface goes here (inserted programmatically at index 0) -->
+    <!-- libGDX GL surface -->
     <FrameLayout
         android:id="@+id/gl_container"
         android:layout_width="match_parent"
@@ -27,7 +27,7 @@
             android:src="@android:drawable/ic_menu_revert"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:tint="@android:color/white"
-            android:contentDescription="Back"
+            android:contentDescription="@string/back"
             android:onClick="finish" />
 
         <TextView
@@ -62,7 +62,7 @@
             android:src="@android:drawable/ic_menu_manage"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:tint="@android:color/white"
-            android:contentDescription="Change version" />
+            android:contentDescription="@string/switch_version" />
 
         <ImageButton
             android:id="@+id/btn_reset_camera"
@@ -71,7 +71,7 @@
             android:src="@android:drawable/ic_menu_zoom"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:tint="@android:color/white"
-            android:contentDescription="Reset camera" />
+            android:contentDescription="@string/reset_camera" />
 
         <ImageButton
             android:id="@+id/btn_show_bones"
@@ -81,7 +81,7 @@
             android:background="?attr/selectableItemBackgroundBorderless"
             android:alpha="0.4"
             android:tint="@android:color/white"
-            android:contentDescription="Toggle bones" />
+            android:contentDescription="@string/toggle_bones" />
 
         <ImageButton
             android:id="@+id/btn_toggle_panel"
@@ -90,7 +90,7 @@
             android:src="@android:drawable/arrow_down_float"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:tint="@android:color/white"
-            android:contentDescription="Toggle control panel" />
+            android:contentDescription="@string/toggle_controls" />
 
     </LinearLayout>
 
@@ -119,7 +119,7 @@
                 android:src="@android:drawable/ic_media_previous"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:tint="@android:color/white"
-                android:contentDescription="Previous animation" />
+                android:contentDescription="@string/previous_animation" />
 
             <ImageButton
                 android:id="@+id/btn_pause"
@@ -130,7 +130,7 @@
                 android:tint="@android:color/white"
                 android:scaleType="centerInside"
                 android:layout_marginEnd="4dp"
-                android:contentDescription="Pause/Play" />
+                android:contentDescription="@string/pause_play" />
 
             <Spinner
                 android:id="@+id/spinner_animation"
@@ -148,7 +148,7 @@
                 android:src="@android:drawable/ic_media_next"
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:tint="@android:color/white"
-                android:contentDescription="Next animation" />
+                android:contentDescription="@string/next_animation" />
 
         </LinearLayout>
 
@@ -219,7 +219,7 @@
 
         </LinearLayout>
 
-        <!-- Toggle row: Loop, Premultiplied Alpha -->
+        <!-- Premultiply Alpha row (Loop removed) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -229,25 +229,10 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Loop"
+                android:text="@string/premultiply_alpha"
                 android:textColor="@android:color/white"
                 android:textSize="13sp"
-                android:layout_marginEnd="4dp" />
-
-            <Switch
-                android:id="@+id/switch_loop"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:checked="true"
-                android:layout_marginEnd="16dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Premultiply Alpha"
-                android:textColor="@android:color/white"
-                android:textSize="13sp"
-                android:layout_marginEnd="4dp" />
+                android:layout_marginEnd="8dp" />
 
             <Switch
                 android:id="@+id/switch_premultiply"
