@@ -37,7 +37,7 @@ public class SettingsActivity extends AppCompatActivity {
         btnClearFolder.setOnClickListener(v -> {
             prefManager.saveDefaultFolderUri(null);
             updateDisplay();
-            Toast.makeText(this, "Default folder cleared", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.default_folder_cleared, Toast.LENGTH_SHORT).show();
         });
 
         updateDisplay();
@@ -60,7 +60,7 @@ public class SettingsActivity extends AppCompatActivity {
                 prefManager.saveDefaultFolderUri(uriString);
                 prefManager.saveLastScanUri(uriString);
                 updateDisplay();
-                Toast.makeText(this, "Default folder updated", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, R.string.default_folder_updated, Toast.LENGTH_SHORT).show();
             }
         }
     }
@@ -68,9 +68,9 @@ public class SettingsActivity extends AppCompatActivity {
     private void updateDisplay() {
         String uri = prefManager.getDefaultFolderUri();
         if (uri != null) {
-            tvDefaultFolder.setText("Current: " + uri);
+            tvDefaultFolder.setText(getString(R.string.current_folder, uri));
         } else {
-            tvDefaultFolder.setText("No default folder set");
+            tvDefaultFolder.setText(R.string.no_default_folder);
         }
     }
 }
