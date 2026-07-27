@@ -39,8 +39,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
 
     private int maxTextureSize = 2048;
 
-    protected float animProgress = 0f;
-    protected float animDuration = 0f;
     protected boolean premultipliedAlpha = false;
 
     @Override
@@ -56,7 +54,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         camY = h / 3f;
         camera.position.set(camX, camY, 0);
 
-        // 获取最大纹理尺寸
         try {
             IntBuffer buffer = BufferUtils.newIntBuffer(16);
             Gdx.gl20.glGetIntegerv(GL20.GL_MAX_TEXTURE_SIZE, buffer);
@@ -314,11 +311,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         f.delete();
     }
 
-    protected void updateProgress(float progress, float duration) {
-        this.animProgress = progress;
-        this.animDuration = duration;
-    }
-
     protected void updateRendererAlpha() {
         // 由子类覆盖
     }
@@ -329,21 +321,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         if (loaded) {
             updateRendererAlpha();
         }
-    }
-
-    @Override
-    public float getAnimationProgress() {
-        return animProgress;
-    }
-
-    @Override
-    public float getAnimationDuration() {
-        return animDuration;
-    }
-
-    @Override
-    public void setAnimationPosition(float position) {
-        // 由子类覆盖
     }
 
     @Override
