@@ -3,6 +3,7 @@ package com.spineviewer.ui;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,6 +14,8 @@ import androidx.documentfile.provider.DocumentFile;
 
 import com.spineviewer.R;
 import com.spineviewer.utils.PreferenceManager;
+
+import java.net.URLDecoder;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -66,53 +69,37 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    private String getFullPathFromUri(Uri uri) {
+    /**
+     * 尝试将 SAF URI 转换为可读的文件系统路径（仅适用于外部存储）
+     */
+    private String getReadablePath(Uri uri) {
         try {
-            // 尝试通过 DocumentFile 获取完整路径
-            DocumentFile doc = DocumentFile.fromTreeUri(this, uri);
-            if (doc != null) {
-                // 构建完整路径：递归获取父目录名称
-                StringBuilder path = new StringBuilder();
-                DocumentFile current = doc;
-                java.util.ArrayList<String> segments = new java.util.ArrayList<>();
-                while (current != null) {
-                    String name = current.getName();
-                    if (name != null && !name.isEmpty()) {
-                        segments.add(0, name);
+            String path = uri.getPath();
+            if (path == null) return null;
+
+            // 例如: /tree/primary:Download/Spine
+            if (path.startsWith("/tree/")) {
+                String encoded = path.substring(6); // 去掉 "/tree/"
+                // 解码 URL 编码
+                String decoded = URLDecoder.decode(encoded, "UTF-8");
+                // 检查是否以 "primary:" 开头
+                if (decoded.startsWith("primary:")) {
+                    String relative = decoded.substring(8); // 去掉 "primary:"
+                    // 获取外部存储根目录
+                    String extStorage = Environment.getExternalStorageDirectory().getAbsolutePath();
+                    // 拼接完整路径
+                    if (relative.isEmpty()) {
+                        return extStorage;
+                    } else {
+                        return extStorage + "/" + relative;
                     }
-                    // 获取父目录（DocumentFile 没有直接的 getParent，通过遍历实现）
-                    if (current.getUri().getPath() != null) {
-                        // 尝试通过 URI 路径解析
-                        String uriPath = current.getUri().getPath();
-                        if (uriPath != null && uriPath.contains("/tree/")) {
-                            // 这是根目录，停止
-                            break;
-                        }
-                    }
-                    // 尝试获取父 DocumentFile
-                    try {
-                        String uriStr = current.getUri().toString();
-                        int lastSlash = uriStr.lastIndexOf('/');
-                        if (lastSlash > 0) {
-                            String parentStr = uriStr.substring(0, lastSlash);
-                            if (parentStr.contains("/tree/")) {
-                                current = DocumentFile.fromTreeUri(this, Uri.parse(parentStr));
-                            } else {
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    } catch (Exception e) {
-                        break;
-                    }
+                } else {
+                    // 其他存储（如 SD 卡），可能以 "XXXX-XXXX:" 开头，暂无法解析
+                    return decoded;
                 }
-                if (!segments.isEmpty()) {
-                    return "/" + String.join("/", segments);
-                }
-                return doc.getName();
+            } else {
+                return uri.getPath();
             }
-            return uri.getPath();
         } catch (Exception e) {
             return uri.getPath();
         }
@@ -123,9 +110,9 @@ public class SettingsActivity extends AppCompatActivity {
         if (uriString != null) {
             try {
                 Uri uri = Uri.parse(uriString);
-                String path = getFullPathFromUri(uri);
-                if (path != null && !path.isEmpty()) {
-                    tvDefaultFolder.setText(getString(R.string.current_folder, path));
+                String readable = getReadablePath(uri);
+                if (readable != null && !readable.isEmpty()) {
+                    tvDefaultFolder.setText(getString(R.string.current_folder, readable));
                 } else {
                     tvDefaultFolder.setText(getString(R.string.current_folder, uriString));
                 }
