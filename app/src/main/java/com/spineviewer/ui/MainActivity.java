@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -106,7 +107,6 @@ public class MainActivity extends AppCompatActivity
                 scanFolder(uri);
             }
         } else {
-            // 首次启动，显示引导对话框
             if (fileList.isEmpty()) {
                 showWelcomeDialog();
             }
@@ -116,16 +116,26 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void showWelcomeDialog() {
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome_title)
                 .setMessage(R.string.welcome_message)
-                .setPositiveButton(R.string.go_to_settings, (dialog, which) -> {
+                .setPositiveButton(R.string.go_to_settings, (d, which) -> {
                     Intent intent = new Intent(this, SettingsActivity.class);
                     startActivity(intent);
                 })
                 .setNegativeButton(R.string.later, null)
                 .setCancelable(true)
-                .show();
+                .create();
+        dialog.show();
+        // 设置按钮颜色
+        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positive != null) {
+            positive.setTextColor(ContextCompat.getColor(this, R.color.accent));
+        }
+        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negative != null) {
+            negative.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        }
     }
 
     private void loadPersistedList() {
@@ -241,7 +251,6 @@ public class MainActivity extends AppCompatActivity
             runOnUiThread(() -> {
                 loadingView.setVisibility(View.GONE);
                 if (!found.isEmpty()) {
-                    // 合并结果：保留持久化列表，但替换为扫描结果
                     fileList.clear();
                     fileList.addAll(found);
                     prefManager.saveFileList(fileList);
@@ -291,10 +300,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFileLongClick(SpineFileInfo info, int position) {
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle("删除条目")
                 .setMessage("确定要删除 \"" + info.name + "\" 吗？")
-                .setPositiveButton("删除", (dialog, which) -> {
+                .setPositiveButton("删除", (d, which) -> {
                     fileList.remove(position);
                     adapter.setItems(fileList);
                     prefManager.saveFileList(fileList);
@@ -302,7 +311,16 @@ public class MainActivity extends AppCompatActivity
                     Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show();
                 })
                 .setNegativeButton("取消", null)
-                .show();
+                .create();
+        dialog.show();
+        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positive != null) {
+            positive.setTextColor(ContextCompat.getColor(this, R.color.accent));
+        }
+        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negative != null) {
+            negative.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        }
     }
 
     private void openPreview(SpineFileInfo info) {
@@ -328,16 +346,21 @@ public class MainActivity extends AppCompatActivity
             if (versions[i] == info.getEffectiveVersion()) currentIdx = i;
         }
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(getString(R.string.select_version_title, info.name))
-                .setSingleChoiceItems(labels, currentIdx, (dialog, which) -> {
+                .setSingleChoiceItems(labels, currentIdx, (d, which) -> {
                     info.selectedVersion = versions[which];
                     prefManager.saveFileList(fileList);
                     adapter.notifyItemChanged(position);
-                    dialog.dismiss();
+                    d.dismiss();
                 })
                 .setNegativeButton(R.string.close, null)
-                .show();
+                .create();
+        dialog.show();
+        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negative != null) {
+            negative.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        }
     }
 
     private void updateEmptyView() {
