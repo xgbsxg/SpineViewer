@@ -18,12 +18,15 @@ import com.spineviewer.utils.PreferenceManager;
 public class SettingsActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_FOLDER = 1001;
+    private static final int REQUEST_CODE_STORAGE = 1002;
 
     private PreferenceManager prefManager;
     private TextView tvDefaultFolder;
+    private TextView tvStorageDirectory;
     private Button btnSelectFolder;
     private Button btnClearFolder;
-    private Button btnToolbox;
+    private Button btnSelectStorage;
+    private Button btnClearStorage;
     private Switch switchDefaultPremultiply;
 
     @Override
@@ -34,9 +37,11 @@ public class SettingsActivity extends AppCompatActivity {
         prefManager = new PreferenceManager(this);
 
         tvDefaultFolder = findViewById(R.id.tv_default_folder);
+        tvStorageDirectory = findViewById(R.id.tv_storage_directory);
         btnSelectFolder = findViewById(R.id.btn_select_folder);
         btnClearFolder = findViewById(R.id.btn_clear_folder);
-        btnToolbox = findViewById(R.id.btn_toolbox);
+        btnSelectStorage = findViewById(R.id.btn_select_storage);
+        btnClearStorage = findViewById(R.id.btn_clear_storage);
         switchDefaultPremultiply = findViewById(R.id.switch_default_premultiply);
 
         switchDefaultPremultiply.setChecked(prefManager.getDefaultPremultiplyAlpha());
@@ -52,9 +57,11 @@ public class SettingsActivity extends AppCompatActivity {
             Toast.makeText(this, R.string.default_folder_cleared, Toast.LENGTH_SHORT).show();
         });
 
-        btnToolbox.setOnClickListener(v -> {
-            Intent intent = new Intent(this, ToolboxActivity.class);
-            startActivity(intent);
+        btnSelectStorage.setOnClickListener(v -> openStoragePicker());
+        btnClearStorage.setOnClickListener(v -> {
+            prefManager.saveStorageDirectoryUri(null);
+            updateDisplay();
+            Toast.makeText(this, R.string.storage_directory_cleared, Toast.LENGTH_SHORT).show();
         });
 
         updateDisplay();
@@ -65,20 +72,31 @@ public class SettingsActivity extends AppCompatActivity {
         startActivityForResult(intent, REQUEST_CODE_FOLDER);
     }
 
+    private void openStoragePicker() {
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
+        startActivityForResult(intent, REQUEST_CODE_STORAGE);
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == REQUEST_CODE_FOLDER && resultCode == RESULT_OK && data != null) {
-            Uri uri = data.getData();
-            if (uri != null) {
-                getContentResolver().takePersistableUriPermission(uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                String uriString = uri.toString();
-                prefManager.saveDefaultFolderUri(uriString);
-                prefManager.saveLastScanUri(uriString);
-                updateDisplay();
-                Toast.makeText(this, R.string.default_folder_updated, Toast.LENGTH_SHORT).show();
-            }
+        if (data == null || resultCode != RESULT_OK) return;
+
+        Uri uri = data.getData();
+        if (uri == null) return;
+
+        getContentResolver().takePersistableUriPermission(uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+
+        if (requestCode == REQUEST_CODE_FOLDER) {
+            prefManager.saveDefaultFolderUri(uri.toString());
+            prefManager.saveLastScanUri(uri.toString());
+            updateDisplay();
+            Toast.makeText(this, R.string.default_folder_updated, Toast.LENGTH_SHORT).show();
+        } else if (requestCode == REQUEST_CODE_STORAGE) {
+            prefManager.saveStorageDirectoryUri(uri.toString());
+            updateDisplay();
+            Toast.makeText(this, R.string.storage_directory_updated, Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -109,21 +127,38 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void updateDisplay() {
-        String uriString = prefManager.getDefaultFolderUri();
-        if (uriString != null) {
+        String folderUri = prefManager.getDefaultFolderUri();
+        if (folderUri != null) {
             try {
-                Uri uri = Uri.parse(uriString);
+                Uri uri = Uri.parse(folderUri);
                 String readable = getReadablePath(uri);
                 if (readable != null && !readable.isEmpty()) {
                     tvDefaultFolder.setText(getString(R.string.current_folder, readable));
                 } else {
-                    tvDefaultFolder.setText(getString(R.string.current_folder, uriString));
+                    tvDefaultFolder.setText(getString(R.string.current_folder, folderUri));
                 }
             } catch (Exception e) {
-                tvDefaultFolder.setText(getString(R.string.current_folder, uriString));
+                tvDefaultFolder.setText(getString(R.string.current_folder, folderUri));
             }
         } else {
             tvDefaultFolder.setText(R.string.no_default_folder);
+        }
+
+        String storageUri = prefManager.getStorageDirectoryUri();
+        if (storageUri != null) {
+            try {
+                Uri uri = Uri.parse(storageUri);
+                String readable = getReadablePath(uri);
+                if (readable != null && !readable.isEmpty()) {
+                    tvStorageDirectory.setText(getString(R.string.current_storage_directory, readable));
+                } else {
+                    tvStorageDirectory.setText(getString(R.string.current_storage_directory, storageUri));
+                }
+            } catch (Exception e) {
+                tvStorageDirectory.setText(getString(R.string.current_storage_directory, storageUri));
+            }
+        } else {
+            tvStorageDirectory.setText(R.string.no_storage_directory);
         }
     }
 }
