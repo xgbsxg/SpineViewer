@@ -36,8 +36,6 @@ public abstract class SpineViewerEngine implements ApplicationListener {
     protected float camX, camY, camZoom = 1.0f;
     protected float skeletonX, skeletonY;
 
-    protected float animDuration = 0f;
-
     public interface StateListener {
         void onLoaded(List<String> animations, List<String> skins, SpineVersion version);
         void onError(String message);
@@ -87,9 +85,6 @@ public abstract class SpineViewerEngine implements ApplicationListener {
     public abstract List<String> getSkins();
 
     public abstract void setPremultipliedAlpha(boolean enabled);
-
-    public abstract void setAnimationPosition(float position);
-    public abstract float getAnimationDuration();
 
     protected void notifyLoaded(List<String> animations, List<String> skins) {
         if (stateListener != null) {
