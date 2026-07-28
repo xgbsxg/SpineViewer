@@ -23,6 +23,7 @@ import com.spineviewer.R;
 import com.spineviewer.spine.SpineEngineFactory;
 import com.spineviewer.spine.SpineVersion;
 import com.spineviewer.spine.SpineViewerEngine;
+import com.spineviewer.utils.PreferenceManager;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +38,7 @@ public class SpinePreviewActivity extends AndroidApplication
     public static final String EXTRA_TEXTURE_URIS = "texture_uris";
 
     private SpineViewerEngine engine;
+    private PreferenceManager prefManager;
 
     private View controlPanel;
     private Spinner spinnerAnimation;
@@ -64,6 +66,8 @@ public class SpinePreviewActivity extends AndroidApplication
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_spine_preview);
+
+        prefManager = new PreferenceManager(this);
 
         skeletonUriStr = getIntent().getStringExtra(EXTRA_SKELETON_URI);
         atlasUriStr    = getIntent().getStringExtra(EXTRA_ATLAS_URI);
@@ -109,10 +113,9 @@ public class SpinePreviewActivity extends AndroidApplication
             @Override public void onStopTrackingTouch(SeekBar s) {}
         });
 
-        // 默认启用循环
         if (engine != null) engine.setLooping(true);
 
-        switchPremultiply.setChecked(false);
+        switchPremultiply.setChecked(prefManager.getDefaultPremultiplyAlpha());
         switchPremultiply.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (engine != null) engine.setPremultipliedAlpha(isChecked);
         });
@@ -186,6 +189,10 @@ public class SpinePreviewActivity extends AndroidApplication
         engine.setStateListener(this);
         engine.setLooping(true);
 
+        boolean defaultPremultiply = prefManager.getDefaultPremultiplyAlpha();
+        engine.setPremultipliedAlpha(defaultPremultiply);
+        switchPremultiply.setChecked(defaultPremultiply);
+
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         config.useGL30 = false;
         config.numSamples = 2;
@@ -237,16 +244,21 @@ public class SpinePreviewActivity extends AndroidApplication
             labels[i] = getString(R.string.version_item, versions[i].getDisplayName());
             if (versions[i] == currentVersion) sel = i;
         }
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.switch_version_title)
-                .setSingleChoiceItems(labels, sel, (dialog, which) -> {
-                    dialog.dismiss();
+                .setSingleChoiceItems(labels, sel, (d, which) -> {
+                    d.dismiss();
                     if (versions[which] != currentVersion) {
                         launchEngine(versions[which]);
                     }
                 })
                 .setNegativeButton(R.string.close, null)
-                .show();
+                .create();
+        dialog.show();
+        android.widget.Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negative != null) {
+            negative.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_secondary));
+        }
     }
 
     @Override
@@ -277,12 +289,12 @@ public class SpinePreviewActivity extends AndroidApplication
         boolean[] checked = new boolean[skins.size()];
         for (int i = 0; i < skins.size(); i++) checked[i] = selectedSkins[i];
 
-        new AlertDialog.Builder(this)
+        AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.skin_picker_title)
-                .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
+                .setMultiChoiceItems(labels, checked, (d, which, isChecked) -> {
                     checked[which] = isChecked;
                 })
-                .setPositiveButton(R.string.skin_apply, (dialog, which) -> {
+                .setPositiveButton(R.string.skin_apply, (d, which) -> {
                     boolean anySelected = false;
                     for (boolean b : checked) if (b) { anySelected = true; break; }
                     if (!anySelected && checked.length > 0) checked[0] = true;
@@ -291,7 +303,16 @@ public class SpinePreviewActivity extends AndroidApplication
                     applySelectedSkins();
                 })
                 .setNegativeButton(R.string.skin_cancel, null)
-                .show();
+                .create();
+        dialog.show();
+        android.widget.Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positive != null) {
+            positive.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.accent));
+        }
+        android.widget.Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negative != null) {
+            negative.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_secondary));
+        }
     }
 
     private void updateSkinButton() {
@@ -324,12 +345,21 @@ public class SpinePreviewActivity extends AndroidApplication
     public void onError(String message) {
         runOnUiThread(() -> {
             tvStatus.setText(getString(R.string.error_loading, message));
-            new AlertDialog.Builder(this)
+            AlertDialog dialog = new AlertDialog.Builder(this)
                     .setTitle(getString(R.string.load_error) + " — Spine " + currentVersion.getDisplayName())
                     .setMessage(message + "\n\n" + getString(R.string.try_switch_version))
                     .setPositiveButton(R.string.switch_version, (d, w) -> showVersionPicker())
                     .setNegativeButton(R.string.close, (d, w) -> finish())
-                    .show();
+                    .create();
+            dialog.show();
+            android.widget.Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+            if (positive != null) {
+                positive.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.accent));
+            }
+            android.widget.Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+            if (negative != null) {
+                negative.setTextColor(androidx.core.content.ContextCompat.getColor(this, R.color.text_secondary));
+            }
         });
     }
 
