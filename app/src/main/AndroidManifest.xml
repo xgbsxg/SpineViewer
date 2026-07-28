@@ -44,7 +44,7 @@
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
-            android:label="Settings"
+            android:label="设置"
             android:theme="@style/Theme.SpineViewer" />
 
     </application>
