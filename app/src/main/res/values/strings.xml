@@ -35,6 +35,7 @@
     <string name="clear_default">清除默认</string>
     <string name="default_folder_updated">默认文件夹已更新</string>
     <string name="default_folder_cleared">默认文件夹已清除</string>
+    <string name="default_premultiply_alpha">默认启用预乘 Alpha</string>
 
     <!-- 文件列表项 -->
     <string name="default_format">JSON</string>
