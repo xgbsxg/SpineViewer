@@ -19,6 +19,7 @@ public class PreferenceManager {
     private static final String KEY_FILE_LIST = "file_list_json";
     private static final String KEY_LAST_SCAN_URI = "last_scan_uri";
     private static final String KEY_DEFAULT_PREMULTIPLY_ALPHA = "default_premultiply_alpha";
+    private static final String KEY_CACHE_INDEX = "cache_index_json";
 
     private final SharedPreferences prefs;
     private final Gson gson;
@@ -133,5 +134,18 @@ public class PreferenceManager {
 
     public boolean getDefaultPremultiplyAlpha() {
         return prefs.getBoolean(KEY_DEFAULT_PREMULTIPLY_ALPHA, false);
+    }
+
+    public void saveCacheIndex(String json) {
+        prefs.edit().putString(KEY_CACHE_INDEX, json).apply();
+    }
+
+    @Nullable
+    public String getCacheIndex() {
+        return prefs.getString(KEY_CACHE_INDEX, null);
+    }
+
+    public void clearCacheIndex() {
+        prefs.edit().remove(KEY_CACHE_INDEX).apply();
     }
 }
