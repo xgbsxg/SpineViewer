@@ -26,20 +26,9 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
-    buildFeatures {
-        viewBinding true
-    }
-
-    // Allow duplicate classes from different spine runtime versions
     packagingOptions {
         resources {
             excludes += ['META-INF/DEPENDENCIES', 'META-INF/LICENSE', 'META-INF/NOTICE']
-        }
-    }
-
-    sourceSets {
-        main {
-            java.srcDirs = ['src/main/java']
         }
     }
 }
@@ -53,8 +42,6 @@ dependencies {
     implementation 'androidx.lifecycle:lifecycle-livedata:2.8.7'
     implementation 'androidx.documentfile:documentfile:1.0.1'
 
-    // libGDX for Android (spine runtime depends on this)
-    // libgdx 1.13.0 required for spine 4.3 (LongSet, JsonMatcher, Array factory constructor)
     implementation 'com.badlogicgames.gdx:gdx:1.13.0'
     implementation 'com.badlogicgames.gdx:gdx-backend-android:1.13.0'
     implementation('com.badlogicgames.gdx:gdx-platform:1.13.0:natives-armeabi-v7a') { transitive = false }
@@ -62,6 +49,5 @@ dependencies {
     implementation('com.badlogicgames.gdx:gdx-platform:1.13.0:natives-x86') { transitive = false }
     implementation('com.badlogicgames.gdx:gdx-platform:1.13.0:natives-x86_64') { transitive = false }
 
-    // JSON parsing for spine file version detection
     implementation 'com.google.code.gson:gson:2.11.0'
 }
