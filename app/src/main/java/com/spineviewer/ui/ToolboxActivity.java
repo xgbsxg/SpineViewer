@@ -116,184 +116,59 @@ public class ToolboxActivity extends AppCompatActivity {
             float scale = (float) params[1];
 
             try {
-                StringBuilder content = new StringBuilder();
+                // 读取全部行
+                List<String> lines = new ArrayList<>();
                 try (BufferedReader reader = new BufferedReader(
                         new InputStreamReader(getContentResolver().openInputStream(uri)))) {
                     String line;
                     while ((line = reader.readLine()) != null) {
-                        content.append(line).append("\n");
+                        lines.add(line);
                     }
                 }
 
-                String atlasText = content.toString();
-                String[] lines = atlasText.split("\n");
-
                 List<String> newLines = new ArrayList<>();
+                boolean inPage = false;
                 boolean inRegion = false;
 
                 for (String line : lines) {
                     String trimmed = line.trim();
+                    String leadingWhitespace = getLeadingWhitespace(line);
+                    boolean isIndented = leadingWhitespace.length() > 0;
 
-                    // 检查是否是区域名称行（非空行、非缩进、且不是页面属性行）
-                    if (!trimmed.isEmpty() && !trimmed.startsWith(" ") && !trimmed.startsWith("\t")) {
-                        // 检查是否是页面名称行（以 .png 结尾）
-                        if (trimmed.endsWith(".png") || trimmed.endsWith(".jpg") || trimmed.endsWith(".webp")) {
-                            inRegion = false;
-                            newLines.add(line);
-                            continue;
-                        }
-                        // 否则是区域名称
+                    // 检测图片名称行（新页面开始）
+                    if (trimmed.endsWith(".png") || trimmed.endsWith(".jpg") || trimmed.endsWith(".webp")) {
+                        inPage = true;
+                        inRegion = false;
+                        newLines.add(line);
+                        continue;
+                    }
+
+                    // 检测区域名称行（非缩进，非图片名，非空）
+                    if (!isIndented && !trimmed.isEmpty() && !trimmed.endsWith(".png") && !trimmed.endsWith(".jpg") && !trimmed.endsWith(".webp")) {
+                        inPage = false;
                         inRegion = true;
                         newLines.add(line);
                         continue;
                     }
 
-                    // 处理缩进的属性行
-                    if (inRegion && (trimmed.startsWith(" ") || trimmed.startsWith("\t"))) {
-                        String property = trimmed.trim();
-
-                        // 处理 bounds: x, y, width, height
-                        if (property.startsWith("bounds:")) {
-                            String[] parts = property.replace("bounds:", "").trim().split("\\s*,\\s*");
-                            if (parts.length >= 4) {
-                                try {
-                                    int x = Integer.parseInt(parts[0].trim());
-                                    int y = Integer.parseInt(parts[1].trim());
-                                    int width = Integer.parseInt(parts[2].trim());
-                                    int height = Integer.parseInt(parts[3].trim());
-
-                                    int newX = Math.round(x * scale);
-                                    int newY = Math.round(y * scale);
-                                    int newWidth = Math.round(width * scale);
-                                    int newHeight = Math.round(height * scale);
-
-                                    newLines.add("  bounds: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight);
-                                    continue;
-                                } catch (NumberFormatException e) {
-                                    // 解析失败，保留原行
-                                }
-                            }
-                        }
-
-                        // 处理 xy: x, y (旧格式)
-                        if (property.startsWith("xy:")) {
-                            String[] parts = property.replace("xy:", "").trim().split("\\s*,\\s*");
-                            if (parts.length >= 2) {
-                                try {
-                                    int x = Integer.parseInt(parts[0].trim());
-                                    int y = Integer.parseInt(parts[1].trim());
-                                    int newX = Math.round(x * scale);
-                                    int newY = Math.round(y * scale);
-                                    newLines.add("  xy: " + newX + ", " + newY);
-                                    continue;
-                                } catch (NumberFormatException e) {
-                                    // 解析失败，保留原行
-                                }
-                            }
-                        }
-
-                        // 处理 size: width, height (旧格式)
-                        if (property.startsWith("size:")) {
-                            String[] parts = property.replace("size:", "").trim().split("\\s*,\\s*");
-                            if (parts.length >= 2) {
-                                try {
-                                    int width = Integer.parseInt(parts[0].trim());
-                                    int height = Integer.parseInt(parts[1].trim());
-                                    int newWidth = Math.round(width * scale);
-                                    int newHeight = Math.round(height * scale);
-                                    newLines.add("  size: " + newWidth + ", " + newHeight);
-                                    continue;
-                                } catch (NumberFormatException e) {
-                                    // 解析失败，保留原行
-                                }
-                            }
-                        }
-
-                        // 处理 rotate: true/false
-                        if (property.startsWith("rotate:")) {
-                            String value = property.replace("rotate:", "").trim();
-                            if (value.equals("true") || value.equals("false")) {
-                                newLines.add("  rotate: " + value);
-                                continue;
-                            }
-                        }
-
-                        // 处理 index: 数字
-                        if (property.startsWith("index:")) {
-                            String value = property.replace("index:", "").trim();
-                            newLines.add("  index: " + value);
+                    // 处理缩进行（属性）
+                    if (isIndented) {
+                        // 页面属性（只在 inPage 时处理）
+                        if (inPage && !inRegion) {
+                            String modifiedLine = handlePageProperty(line, trimmed, scale);
+                            newLines.add(modifiedLine);
                             continue;
                         }
 
-                        // 处理 offsets: x, y, width, height
-                        if (property.startsWith("offsets:")) {
-                            String[] parts = property.replace("offsets:", "").trim().split("\\s*,\\s*");
-                            if (parts.length >= 4) {
-                                try {
-                                    int x = Integer.parseInt(parts[0].trim());
-                                    int y = Integer.parseInt(parts[1].trim());
-                                    int width = Integer.parseInt(parts[2].trim());
-                                    int height = Integer.parseInt(parts[3].trim());
-                                    int newX = Math.round(x * scale);
-                                    int newY = Math.round(y * scale);
-                                    int newWidth = Math.round(width * scale);
-                                    int newHeight = Math.round(height * scale);
-                                    newLines.add("  offsets: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight);
-                                    continue;
-                                } catch (NumberFormatException e) {
-                                    // 解析失败，保留原行
-                                }
-                            }
+                        // 区域属性（只在 inRegion 时处理）
+                        if (inRegion) {
+                            String modifiedLine = handleRegionProperty(line, trimmed, scale);
+                            newLines.add(modifiedLine);
+                            continue;
                         }
-
-                        // 处理 split: x, y, width, height
-                        if (property.startsWith("split:")) {
-                            String[] parts = property.replace("split:", "").trim().split("\\s*,\\s*");
-                            if (parts.length >= 4) {
-                                try {
-                                    int x = Integer.parseInt(parts[0].trim());
-                                    int y = Integer.parseInt(parts[1].trim());
-                                    int width = Integer.parseInt(parts[2].trim());
-                                    int height = Integer.parseInt(parts[3].trim());
-                                    int newX = Math.round(x * scale);
-                                    int newY = Math.round(y * scale);
-                                    int newWidth = Math.round(width * scale);
-                                    int newHeight = Math.round(height * scale);
-                                    newLines.add("  split: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight);
-                                    continue;
-                                } catch (NumberFormatException e) {
-                                    // 解析失败，保留原行
-                                }
-                            }
-                        }
-
-                        // 处理 pad: x, y, width, height
-                        if (property.startsWith("pad:")) {
-                            String[] parts = property.replace("pad:", "").trim().split("\\s*,\\s*");
-                            if (parts.length >= 4) {
-                                try {
-                                    int x = Integer.parseInt(parts[0].trim());
-                                    int y = Integer.parseInt(parts[1].trim());
-                                    int width = Integer.parseInt(parts[2].trim());
-                                    int height = Integer.parseInt(parts[3].trim());
-                                    int newX = Math.round(x * scale);
-                                    int newY = Math.round(y * scale);
-                                    int newWidth = Math.round(width * scale);
-                                    int newHeight = Math.round(height * scale);
-                                    newLines.add("  pad: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight);
-                                    continue;
-                                } catch (NumberFormatException e) {
-                                    // 解析失败，保留原行
-                                }
-                            }
-                        }
-
-                        // 其他属性（如 pma、filter、repeat 等）不修改，直接保留
-                        newLines.add(line);
-                        continue;
                     }
 
-                    // 非区域行（页面属性或空行），直接保留
+                    // 其他行（空行或无法识别的行）直接保留
                     newLines.add(line);
                 }
 
@@ -325,6 +200,157 @@ public class ToolboxActivity extends AppCompatActivity {
             } catch (Exception e) {
                 return "ERROR:" + e.getMessage();
             }
+        }
+
+        private String getLeadingWhitespace(String line) {
+            int count = 0;
+            while (count < line.length() && (line.charAt(count) == ' ' || line.charAt(count) == '\t')) {
+                count++;
+            }
+            return line.substring(0, count);
+        }
+
+        private String handlePageProperty(String originalLine, String trimmed, float scale) {
+            // 只修改 size 行
+            if (trimmed.startsWith("size:")) {
+                String[] parts = trimmed.replace("size:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 2) {
+                    try {
+                        int width = Integer.parseInt(parts[0].trim());
+                        int height = Integer.parseInt(parts[1].trim());
+                        int newWidth = Math.round(width * scale);
+                        int newHeight = Math.round(height * scale);
+                        String newLine = "size: " + newWidth + ", " + newHeight;
+                        // 保留原有缩进
+                        String leading = getLeadingWhitespace(originalLine);
+                        return leading + newLine;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+            // 其他页面属性（如 format, filter, repeat）不修改
+            return originalLine;
+        }
+
+        private String handleRegionProperty(String originalLine, String trimmed, float scale) {
+            String leading = getLeadingWhitespace(originalLine);
+
+            // 处理 bounds: x, y, width, height
+            if (trimmed.startsWith("bounds:")) {
+                String[] parts = trimmed.replace("bounds:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 4) {
+                    try {
+                        int x = Integer.parseInt(parts[0].trim());
+                        int y = Integer.parseInt(parts[1].trim());
+                        int width = Integer.parseInt(parts[2].trim());
+                        int height = Integer.parseInt(parts[3].trim());
+                        int newX = Math.round(x * scale);
+                        int newY = Math.round(y * scale);
+                        int newWidth = Math.round(width * scale);
+                        int newHeight = Math.round(height * scale);
+                        return leading + "bounds: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+
+            // 处理 xy: x, y (旧格式)
+            if (trimmed.startsWith("xy:")) {
+                String[] parts = trimmed.replace("xy:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 2) {
+                    try {
+                        int x = Integer.parseInt(parts[0].trim());
+                        int y = Integer.parseInt(parts[1].trim());
+                        int newX = Math.round(x * scale);
+                        int newY = Math.round(y * scale);
+                        return leading + "xy: " + newX + ", " + newY;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+
+            // 处理 size: width, height (旧格式，区域尺寸)
+            if (trimmed.startsWith("size:")) {
+                // 注意：区域属性也有 size，但格式与页面 size 相同，我们也要缩放
+                String[] parts = trimmed.replace("size:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 2) {
+                    try {
+                        int width = Integer.parseInt(parts[0].trim());
+                        int height = Integer.parseInt(parts[1].trim());
+                        int newWidth = Math.round(width * scale);
+                        int newHeight = Math.round(height * scale);
+                        return leading + "size: " + newWidth + ", " + newHeight;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+
+            // 处理 offsets: x, y, width, height
+            if (trimmed.startsWith("offsets:")) {
+                String[] parts = trimmed.replace("offsets:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 4) {
+                    try {
+                        int x = Integer.parseInt(parts[0].trim());
+                        int y = Integer.parseInt(parts[1].trim());
+                        int width = Integer.parseInt(parts[2].trim());
+                        int height = Integer.parseInt(parts[3].trim());
+                        int newX = Math.round(x * scale);
+                        int newY = Math.round(y * scale);
+                        int newWidth = Math.round(width * scale);
+                        int newHeight = Math.round(height * scale);
+                        return leading + "offsets: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+
+            // 处理 split: x, y, width, height
+            if (trimmed.startsWith("split:")) {
+                String[] parts = trimmed.replace("split:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 4) {
+                    try {
+                        int x = Integer.parseInt(parts[0].trim());
+                        int y = Integer.parseInt(parts[1].trim());
+                        int width = Integer.parseInt(parts[2].trim());
+                        int height = Integer.parseInt(parts[3].trim());
+                        int newX = Math.round(x * scale);
+                        int newY = Math.round(y * scale);
+                        int newWidth = Math.round(width * scale);
+                        int newHeight = Math.round(height * scale);
+                        return leading + "split: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+
+            // 处理 pad: x, y, width, height
+            if (trimmed.startsWith("pad:")) {
+                String[] parts = trimmed.replace("pad:", "").trim().split("\\s*,\\s*");
+                if (parts.length >= 4) {
+                    try {
+                        int x = Integer.parseInt(parts[0].trim());
+                        int y = Integer.parseInt(parts[1].trim());
+                        int width = Integer.parseInt(parts[2].trim());
+                        int height = Integer.parseInt(parts[3].trim());
+                        int newX = Math.round(x * scale);
+                        int newY = Math.round(y * scale);
+                        int newWidth = Math.round(width * scale);
+                        int newHeight = Math.round(height * scale);
+                        return leading + "pad: " + newX + ", " + newY + ", " + newWidth + ", " + newHeight;
+                    } catch (NumberFormatException e) {
+                        // 解析失败，保留原行
+                    }
+                }
+            }
+
+            // 其他区域属性（如 rotate, index, pma, filter, repeat 等）不修改
+            return originalLine;
         }
 
         @Override
