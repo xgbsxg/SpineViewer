@@ -5,13 +5,11 @@
     android:layout_height="match_parent"
     android:background="@color/bg_dark">
 
-    <!-- libGDX GL surface -->
     <FrameLayout
         android:id="@+id/gl_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <!-- Top HUD bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -94,7 +92,6 @@
 
     </LinearLayout>
 
-    <!-- Bottom control panel -->
     <LinearLayout
         android:id="@+id/control_panel"
         android:layout_width="match_parent"
@@ -104,7 +101,6 @@
         android:background="@color/overlay_bottom"
         android:padding="12dp">
 
-        <!-- Animation row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -152,7 +148,6 @@
 
         </LinearLayout>
 
-        <!-- Skin row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -184,7 +179,6 @@
 
         </LinearLayout>
 
-        <!-- Speed row -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -219,12 +213,12 @@
 
         </LinearLayout>
 
-        <!-- Premultiply Alpha row (Loop removed) -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:gravity="center_vertical">
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -241,6 +235,15 @@
                 android:checked="false" />
 
         </LinearLayout>
+
+        <Button
+            android:id="@+id/btn_export_frames"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/export_frames"
+            android:backgroundTint="@color/accent"
+            android:textColor="@android:color/white"
+            android:padding="10dp" />
 
     </LinearLayout>
 
