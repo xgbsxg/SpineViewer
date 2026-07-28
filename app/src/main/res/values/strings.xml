@@ -32,20 +32,15 @@
     <string name="default_folder_updated">默认文件夹已更新</string>
     <string name="default_folder_cleared">默认文件夹已清除</string>
     <string name="default_premultiply_alpha">默认启用预乘 Alpha</string>
-    <string name="toolbox">工具箱</string>
+    <string name="storage_directory_label">软件储存目录</string>
+    <string name="select_storage_directory">选择储存目录</string>
+    <string name="no_storage_directory">未设置储存目录</string>
+    <string name="current_storage_directory">当前：%s</string>
+    <string name="storage_directory_updated">储存目录已更新</string>
+    <string name="storage_directory_cleared">储存目录已清除</string>
 
-    <string name="toolbox_title">按帧导出切片</string>
-    <string name="export_frames_description">选择一个 Spine 骨骼文件，输入动画名称，将每一帧导出为 PNG 图片序列</string>
-    <string name="select_skeleton_file">选择骨骼文件</string>
-    <string name="skeleton_selected">已选择：%s</string>
-    <string name="no_skeleton_selected">未选择骨骼文件</string>
-    <string name="animation_name_hint">输入动画名称</string>
     <string name="export_frames">导出帧序列</string>
-    <string name="processing">正在导出…</string>
-    <string name="export_success">导出完成，共 %d 帧，保存在 Download 文件夹</string>
-    <string name="export_failed">导出失败：%s</string>
-    <string name="enter_animation_name">请输入动画名称</string>
-    <string name="invalid_skeleton_file">无效的骨骼文件</string>
+    <string name="export_frames_toast">功能开发中，敬请期待</string>
 
     <string name="default_format">JSON</string>
     <string name="default_skeleton_name">骨骼</string>
