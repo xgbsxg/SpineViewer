@@ -3,8 +3,6 @@
 
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
         android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="29" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission android:name="android.permission.READ_MEDIA_VISUAL_USER_SELECTED" />
@@ -47,12 +45,6 @@
             android:name=".ui.SettingsActivity"
             android:exported="false"
             android:label="Settings"
-            android:theme="@style/Theme.SpineViewer" />
-
-        <activity
-            android:name=".ui.ToolboxActivity"
-            android:exported="false"
-            android:label="@string/toolbox_title"
             android:theme="@style/Theme.SpineViewer" />
 
     </application>
