@@ -18,6 +18,7 @@ public class PreferenceManager {
     private static final String KEY_DEFAULT_FOLDER = "default_folder_uri";
     private static final String KEY_FILE_LIST = "file_list_json";
     private static final String KEY_LAST_SCAN_URI = "last_scan_uri";
+    private static final String KEY_DEFAULT_PREMULTIPLY_ALPHA = "default_premultiply_alpha";
 
     private final SharedPreferences prefs;
     private final Gson gson;
@@ -124,5 +125,13 @@ public class PreferenceManager {
     @Nullable
     public String getLastScanUri() {
         return prefs.getString(KEY_LAST_SCAN_URI, null);
+    }
+
+    public void setDefaultPremultiplyAlpha(boolean enabled) {
+        prefs.edit().putBoolean(KEY_DEFAULT_PREMULTIPLY_ALPHA, enabled).apply();
+    }
+
+    public boolean getDefaultPremultiplyAlpha() {
+        return prefs.getBoolean(KEY_DEFAULT_PREMULTIPLY_ALPHA, false);
     }
 }
