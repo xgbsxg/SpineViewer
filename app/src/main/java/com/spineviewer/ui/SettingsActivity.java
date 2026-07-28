@@ -3,8 +3,8 @@ package com.spineviewer.ui;
 import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.widget.Button;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -15,8 +15,6 @@ import androidx.documentfile.provider.DocumentFile;
 import com.spineviewer.R;
 import com.spineviewer.utils.PreferenceManager;
 
-import java.net.URLDecoder;
-
 public class SettingsActivity extends AppCompatActivity {
 
     private static final int REQUEST_CODE_FOLDER = 1001;
@@ -25,6 +23,7 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvDefaultFolder;
     private Button btnSelectFolder;
     private Button btnClearFolder;
+    private Switch switchDefaultPremultiply;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,6 +35,13 @@ public class SettingsActivity extends AppCompatActivity {
         tvDefaultFolder = findViewById(R.id.tv_default_folder);
         btnSelectFolder = findViewById(R.id.btn_select_folder);
         btnClearFolder = findViewById(R.id.btn_clear_folder);
+        switchDefaultPremultiply = findViewById(R.id.switch_default_premultiply);
+
+        switchDefaultPremultiply.setChecked(prefManager.getDefaultPremultiplyAlpha());
+
+        switchDefaultPremultiply.setOnCheckedChangeListener((buttonView, isChecked) -> {
+            prefManager.setDefaultPremultiplyAlpha(isChecked);
+        });
 
         btnSelectFolder.setOnClickListener(v -> openFolderPicker());
         btnClearFolder.setOnClickListener(v -> {
@@ -69,32 +75,22 @@ public class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    /**
-     * 尝试将 SAF URI 转换为可读的文件系统路径（仅适用于外部存储）
-     */
     private String getReadablePath(Uri uri) {
         try {
             String path = uri.getPath();
             if (path == null) return null;
-
-            // 例如: /tree/primary:Download/Spine
             if (path.startsWith("/tree/")) {
-                String encoded = path.substring(6); // 去掉 "/tree/"
-                // 解码 URL 编码
-                String decoded = URLDecoder.decode(encoded, "UTF-8");
-                // 检查是否以 "primary:" 开头
+                String encoded = path.substring(6);
+                String decoded = java.net.URLDecoder.decode(encoded, "UTF-8");
                 if (decoded.startsWith("primary:")) {
-                    String relative = decoded.substring(8); // 去掉 "primary:"
-                    // 获取外部存储根目录
-                    String extStorage = Environment.getExternalStorageDirectory().getAbsolutePath();
-                    // 拼接完整路径
+                    String relative = decoded.substring(8);
+                    String extStorage = android.os.Environment.getExternalStorageDirectory().getAbsolutePath();
                     if (relative.isEmpty()) {
                         return extStorage;
                     } else {
                         return extStorage + "/" + relative;
                     }
                 } else {
-                    // 其他存储（如 SD 卡），可能以 "XXXX-XXXX:" 开头，暂无法解析
                     return decoded;
                 }
             } else {
