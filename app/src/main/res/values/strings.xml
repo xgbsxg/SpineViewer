@@ -1,99 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp"
-    android:background="@color/bg_primary">
+<resources>
+    <!-- 应用名称 -->
+    <string name="app_name">Spine 查看器</string>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/settings_title"
-        android:textSize="24sp"
-        android:textStyle="bold"
-        android:textColor="@color/text_primary"
-        android:layout_marginBottom="24dp" />
+    <!-- 主界面 -->
+    <string name="open_file">打开文件…</string>
+    <string name="clear_list">清除列表</string>
+    <string name="settings">设置</string>
+    <string name="search">搜索</string>
+    <string name="refresh">刷新</string>
+    <string name="change_version">切换版本</string>
+    <string name="empty_icon">🦴</string>
+    <string name="empty_title">暂无 Spine 文件</string>
+    <string name="empty_body">点击右上角“打开文件”或前往“设置”选择默认文件夹</string>
+    <string name="scanning">正在扫描 Spine 文件…</string>
+    <string name="list_cleared">列表已清空</string>
+    <string name="need_permission">需要存储权限才能浏览文件</string>
+    <string name="found_files">找到 %d 个 Spine 骨骼文件</string>
+    <string name="no_files_found">所选文件夹中未找到 Spine 文件</string>
+    <string name="refreshing">正在刷新…</string>
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/default_folder_label"
-        android:textSize="18sp"
-        android:textColor="@color/text_primary"
-        android:layout_marginBottom="8dp" />
+    <!-- 首次启动引导 -->
+    <string name="welcome_title">欢迎使用 Spine 查看器</string>
+    <string name="welcome_message">请先在“设置”中选择一个包含 Spine 文件的文件夹，或者点击“打开文件”单独打开一个骨骼文件。</string>
+    <string name="go_to_settings">前往设置</string>
+    <string name="later">稍后</string>
 
-    <TextView
-        android:id="@+id/tv_default_folder"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/no_default_folder"
-        android:textSize="14sp"
-        android:textColor="@color/text_secondary"
-        android:background="@color/surface"
-        android:padding="12dp"
-        android:layout_marginBottom="16dp"
-        android:minHeight="50dp"
-        android:ellipsize="none"
-        android:maxLines="5" />
+    <!-- 设置界面 -->
+    <string name="settings_title">设置</string>
+    <string name="default_folder_label">默认扫描文件夹</string>
+    <string name="no_default_folder">未设置默认文件夹</string>
+    <string name="current_folder">当前：%s</string>
+    <string name="select_folder">选择文件夹</string>
+    <string name="clear_default">清除默认</string>
+    <string name="default_folder_updated">默认文件夹已更新</string>
+    <string name="default_folder_cleared">默认文件夹已清除</string>
+    <string name="default_premultiply_alpha">默认启用预乘 Alpha</string>
 
-    <Button
-        android:id="@+id/btn_select_folder"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/select_folder"
-        android:layout_marginBottom="8dp" />
+    <!-- 文件列表项 -->
+    <string name="default_format">JSON</string>
+    <string name="default_skeleton_name">骨骼</string>
+    <string name="default_version">Spine 4.3</string>
+    <string name="atlas_ok">✓ 图集</string>
+    <string name="detection_failed">! 自动检测失败</string>
+    <string name="version_label">版本</string>
 
-    <Button
-        android:id="@+id/btn_clear_folder"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/clear_default"
-        style="@style/Widget.AppCompat.Button.Borderless"
-        android:textColor="@color/accent"
-        android:layout_marginBottom="24dp" />
+    <!-- 预览界面 -->
+    <string name="loading">加载中…</string>
+    <string name="default_version_badge">v4.3</string>
+    <string name="label_skin">皮肤</string>
+    <string name="label_speed">速度</string>
+    <string name="default_speed">1.0×</string>
+    <string name="premultiply_alpha">预乘 Alpha</string>
+    <string name="toggle_controls">切换控制面板</string>
+    <string name="reset_camera">重置视角</string>
+    <string name="toggle_bones">显示骨骼</string>
+    <string name="pause_play">暂停/播放</string>
+    <string name="previous_animation">上一个动画</string>
+    <string name="next_animation">下一个动画</string>
+    <string name="switch_version">切换版本</string>
+    <string name="back">返回</string>
+    <string name="load_error">加载错误</string>
+    <string name="try_switch_version">尝试切换运行时版本？</string>
+    <string name="close">关闭</string>
+    <string name="version_prefix">v</string>
+    <string name="anim_count">%d 个动画</string>
+    <string name="skin_count">%d 个皮肤</string>
+    <string name="status_loaded">✓ %1$d 个动画  •  %2$d 个皮肤</string>
+    <string name="skin_picker_title">选择皮肤（多选）</string>
+    <string name="skin_apply">应用</string>
+    <string name="skin_cancel">取消</string>
+    <string name="skin_none">无</string>
+    <string name="skin_single">%s</string>
+    <string name="skin_multiple">%d 个皮肤已选</string>
+    <string name="switch_version_title">切换运行时版本</string>
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/text_secondary"
-        android:layout_marginBottom="24dp" />
+    <!-- 版本选择弹窗 -->
+    <string name="select_version_title">选择运行时版本: %s</string>
+    <string name="version_item">Spine %s</string>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="8dp">
-
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/default_premultiply_alpha"
-            android:textSize="16sp"
-            android:textColor="@color/text_primary" />
-
-        <Switch
-            android:id="@+id/switch_default_premultiply"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
-    </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/text_secondary"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="24dp" />
-
-    <Button
-        android:id="@+id/btn_toolbox"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="工具箱"
-        android:backgroundTint="@color/accent"
-        android:textColor="@android:color/white" />
-
-</LinearLayout>
+    <!-- 错误信息 -->
+    <string name="error_loading">加载失败：%s</string>
+    <string name="error_render">渲染错误：%s</string>
+    <string name="error_unknown">未知错误，请检查文件</string>
+</resources>
