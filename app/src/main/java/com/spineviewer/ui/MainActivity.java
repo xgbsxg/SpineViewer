@@ -127,7 +127,6 @@ public class MainActivity extends AppCompatActivity
                 .setCancelable(true)
                 .create();
         dialog.show();
-        // 设置按钮颜色
         Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
         if (positive != null) {
             positive.setTextColor(ContextCompat.getColor(this, R.color.accent));
