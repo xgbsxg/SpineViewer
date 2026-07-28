@@ -59,6 +59,50 @@
         android:background="@color/text_secondary"
         android:layout_marginBottom="24dp" />
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/storage_directory_label"
+        android:textSize="18sp"
+        android:textColor="@color/text_primary"
+        android:layout_marginBottom="8dp" />
+
+    <TextView
+        android:id="@+id/tv_storage_directory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/no_storage_directory"
+        android:textSize="14sp"
+        android:textColor="@color/text_secondary"
+        android:background="@color/surface"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"
+        android:minHeight="50dp"
+        android:ellipsize="none"
+        android:maxLines="5" />
+
+    <Button
+        android:id="@+id/btn_select_storage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/select_storage_directory"
+        android:layout_marginBottom="8dp" />
+
+    <Button
+        android:id="@+id/btn_clear_storage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/clear_default"
+        style="@style/Widget.AppCompat.Button.Borderless"
+        android:textColor="@color/accent"
+        android:layout_marginBottom="24dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/text_secondary"
+        android:layout_marginBottom="24dp" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -80,20 +124,5 @@
             android:layout_height="wrap_content" />
 
     </LinearLayout>
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="@color/text_secondary"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="24dp" />
-
-    <Button
-        android:id="@+id/btn_toolbox"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="工具箱"
-        android:backgroundTint="@color/accent"
-        android:textColor="@android:color/white" />
 
 </LinearLayout>
