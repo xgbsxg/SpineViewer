@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- 应用名称 -->
     <string name="app_name">Spine 查看器</string>
 
-    <!-- 主界面 -->
     <string name="open_file">打开文件…</string>
     <string name="clear_list">清除列表</string>
     <string name="settings">设置</string>
@@ -20,13 +18,11 @@
     <string name="no_files_found">所选文件夹中未找到 Spine 文件</string>
     <string name="refreshing">正在刷新…</string>
 
-    <!-- 首次启动引导 -->
     <string name="welcome_title">欢迎使用 Spine 查看器</string>
     <string name="welcome_message">请先在“设置”中选择一个包含 Spine 文件的文件夹，或者点击“打开文件”单独打开一个骨骼文件。</string>
     <string name="go_to_settings">前往设置</string>
     <string name="later">稍后</string>
 
-    <!-- 设置界面 -->
     <string name="settings_title">设置</string>
     <string name="default_folder_label">默认扫描文件夹</string>
     <string name="no_default_folder">未设置默认文件夹</string>
@@ -38,22 +34,19 @@
     <string name="default_premultiply_alpha">默认启用预乘 Alpha</string>
     <string name="toolbox">工具箱</string>
 
-    <!-- 工具箱 -->
-    <string name="toolbox_title">工具箱</string>
-    <string name="atlas_scaler_title">图集缩放工具</string>
-    <string name="atlas_scaler_description">选择 .atlas 文件，按比例缩放所有切片并保存到 Download 文件夹</string>
-    <string name="select_atlas_file">选择 .atlas 文件</string>
-    <string name="scale_factor_label">缩放比例</string>
-    <string name="scale_and_save">缩放并保存</string>
-    <string name="atlas_selected">已选择图集：%s</string>
-    <string name="no_atlas_selected">未选择图集</string>
-    <string name="enter_scale_factor">请输入缩放比例（0.1 ~ 2.0）</string>
-    <string name="invalid_scale_factor">缩放比例无效，请输入 0.1 到 2.0 之间的数字</string>
-    <string name="scale_success">图集缩放完成，已保存到 Download 文件夹</string>
-    <string name="scale_failed">图集缩放失败：%s</string>
-    <string name="processing">处理中…</string>
+    <string name="toolbox_title">按帧导出切片</string>
+    <string name="export_frames_description">选择一个 Spine 骨骼文件，输入动画名称，将每一帧导出为 PNG 图片序列</string>
+    <string name="select_skeleton_file">选择骨骼文件</string>
+    <string name="skeleton_selected">已选择：%s</string>
+    <string name="no_skeleton_selected">未选择骨骼文件</string>
+    <string name="animation_name_hint">输入动画名称</string>
+    <string name="export_frames">导出帧序列</string>
+    <string name="processing">正在导出…</string>
+    <string name="export_success">导出完成，共 %d 帧，保存在 Download 文件夹</string>
+    <string name="export_failed">导出失败：%s</string>
+    <string name="enter_animation_name">请输入动画名称</string>
+    <string name="invalid_skeleton_file">无效的骨骼文件</string>
 
-    <!-- 文件列表项 -->
     <string name="default_format">JSON</string>
     <string name="default_skeleton_name">骨骼</string>
     <string name="default_version">Spine 4.3</string>
@@ -61,7 +54,6 @@
     <string name="detection_failed">! 自动检测失败</string>
     <string name="version_label">版本</string>
 
-    <!-- 预览界面 -->
     <string name="loading">加载中…</string>
     <string name="default_version_badge">v4.3</string>
     <string name="label_skin">皮肤</string>
@@ -91,11 +83,9 @@
     <string name="skin_multiple">%d 个皮肤已选</string>
     <string name="switch_version_title">切换运行时版本</string>
 
-    <!-- 版本选择弹窗 -->
     <string name="select_version_title">选择运行时版本: %s</string>
     <string name="version_item">Spine %s</string>
 
-    <!-- 错误信息 -->
     <string name="error_loading">加载失败：%s</string>
     <string name="error_render">渲染错误：%s</string>
     <string name="error_unknown">未知错误，请检查文件</string>
