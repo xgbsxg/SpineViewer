@@ -43,8 +43,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
 
     protected boolean premultipliedAlpha = false;
 
-    protected float animDuration = 0f;
-
     @Override
     public void create() {
         batch = new PolygonSpriteBatch();
@@ -305,14 +303,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             updateRendererAlpha();
         }
     }
-
-    @Override
-    public float getAnimationDuration() {
-        return animDuration;
-    }
-
-    @Override
-    public abstract void setAnimationPosition(float position);
 
     @Override
     public List<String> getAnimations() { return new ArrayList<>(); }
