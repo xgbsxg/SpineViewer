@@ -23,6 +23,7 @@ public class SettingsActivity extends AppCompatActivity {
     private TextView tvDefaultFolder;
     private Button btnSelectFolder;
     private Button btnClearFolder;
+    private Button btnToolbox;
     private Switch switchDefaultPremultiply;
 
     @Override
@@ -35,6 +36,7 @@ public class SettingsActivity extends AppCompatActivity {
         tvDefaultFolder = findViewById(R.id.tv_default_folder);
         btnSelectFolder = findViewById(R.id.btn_select_folder);
         btnClearFolder = findViewById(R.id.btn_clear_folder);
+        btnToolbox = findViewById(R.id.btn_toolbox);
         switchDefaultPremultiply = findViewById(R.id.switch_default_premultiply);
 
         switchDefaultPremultiply.setChecked(prefManager.getDefaultPremultiplyAlpha());
@@ -48,6 +50,11 @@ public class SettingsActivity extends AppCompatActivity {
             prefManager.saveDefaultFolderUri(null);
             updateDisplay();
             Toast.makeText(this, R.string.default_folder_cleared, Toast.LENGTH_SHORT).show();
+        });
+
+        btnToolbox.setOnClickListener(v -> {
+            Intent intent = new Intent(this, ToolboxActivity.class);
+            startActivity(intent);
         });
 
         updateDisplay();
