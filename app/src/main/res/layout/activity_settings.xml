@@ -53,14 +53,12 @@
         android:textColor="@color/accent"
         android:layout_marginBottom="24dp" />
 
-    <!-- 分割线 -->
     <View
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="@color/text_secondary"
         android:layout_marginBottom="24dp" />
 
-    <!-- 默认预乘 Alpha 选项 -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -82,5 +80,20 @@
             android:layout_height="wrap_content" />
 
     </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@color/text_secondary"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp" />
+
+    <Button
+        android:id="@+id/btn_toolbox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="工具箱"
+        android:backgroundTint="@color/accent"
+        android:textColor="@android:color/white" />
 
 </LinearLayout>
