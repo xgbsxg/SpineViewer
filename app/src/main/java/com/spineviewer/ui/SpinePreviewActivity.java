@@ -13,7 +13,6 @@ import android.widget.SeekBar;
 import android.widget.Spinner;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 
@@ -115,7 +114,6 @@ public class SpinePreviewActivity extends AndroidApplication
 
         if (engine != null) engine.setLooping(true);
 
-        switchPremultiply.setChecked(prefManager.getDefaultPremultiplyAlpha());
         switchPremultiply.setOnCheckedChangeListener((buttonView, isChecked) -> {
             if (engine != null) engine.setPremultipliedAlpha(isChecked);
         });
@@ -189,9 +187,8 @@ public class SpinePreviewActivity extends AndroidApplication
         engine.setStateListener(this);
         engine.setLooping(true);
 
-        boolean defaultPremultiply = prefManager.getDefaultPremultiplyAlpha();
-        engine.setPremultipliedAlpha(defaultPremultiply);
-        switchPremultiply.setChecked(defaultPremultiply);
+        boolean premultiplyEnabled = switchPremultiply.isChecked();
+        engine.setPremultipliedAlpha(premultiplyEnabled);
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         config.useGL30 = false;
