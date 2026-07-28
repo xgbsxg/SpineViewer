@@ -18,6 +18,7 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.BufferUtils;
 
 import com.spineviewer.spine.SpineViewerEngine;
+import com.spineviewer.utils.CacheManager;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,6 +45,8 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
 
     protected boolean premultipliedAlpha = false;
 
+    private CacheManager cacheManager;
+
     @Override
     public void create() {
         batch = new PolygonSpriteBatch();
@@ -68,19 +71,41 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
 
         try {
+            cacheManager = new CacheManager(context);
             cacheDir = new File(context.getCacheDir(), "spine_tmp");
             cacheDir.mkdirs();
+
             String skelName = getFileNameFromUri(skeletonUri);
             if (skelName == null) skelName = "skeleton";
-            File skelFile = copyUriToTemp(skeletonUri, skelName);
-            skeletonFileHandle = new FileHandle(skelFile);
 
-            if (atlasUri != null) {
-                String atlasName = getFileNameFromUri(atlasUri);
-                if (atlasName == null) atlasName = "skeleton.atlas";
-                File atlasFile = copyUriToTemp(atlasUri, atlasName);
-                atlasFileHandle = new FileHandle(atlasFile);
-                copyAtlasTextures(atlasFile);
+            long skelSize = cacheManager.getFileSize(skeletonUri);
+            long skelModified = cacheManager.getLastModified(skeletonUri);
+
+            if (cacheManager.isCacheValid(skeletonUri, skelSize, skelModified)) {
+                Log.d(TAG, "Cache valid, using cached files for " + skelName);
+                File cachedSkel = cacheManager.getCachedFile(skeletonUri, skelName);
+                skeletonFileHandle = new FileHandle(cachedSkel);
+
+                if (atlasUri != null) {
+                    String atlasName = getFileNameFromUri(atlasUri);
+                    if (atlasName == null) atlasName = "skeleton.atlas";
+                    File cachedAtlas = cacheManager.getCachedFile(atlasUri, atlasName);
+                    atlasFileHandle = new FileHandle(cachedAtlas);
+                }
+            } else {
+                Log.d(TAG, "Cache invalid, copying files for " + skelName);
+                File skelFile = cacheManager.copyUriToCache(skeletonUri, skelName, skelSize, skelModified);
+                skeletonFileHandle = new FileHandle(skelFile);
+
+                if (atlasUri != null) {
+                    String atlasName = getFileNameFromUri(atlasUri);
+                    if (atlasName == null) atlasName = "skeleton.atlas";
+                    long atlasSize = cacheManager.getFileSize(atlasUri);
+                    long atlasModified = cacheManager.getLastModified(atlasUri);
+                    File atlasFile = cacheManager.copyUriToCache(atlasUri, atlasName, atlasSize, atlasModified);
+                    atlasFileHandle = new FileHandle(atlasFile);
+                    copyAtlasTexturesCached(atlasFile);
+                }
             }
 
             loadSkeleton();
@@ -132,19 +157,7 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
     }
 
-    protected File copyUriToTemp(Uri uri, String targetName) throws IOException {
-        File out = new File(cacheDir, targetName);
-        try (InputStream is = context.getContentResolver().openInputStream(uri);
-             FileOutputStream fos = new FileOutputStream(out)) {
-            if (is == null) throw new IOException("Cannot open URI: " + uri);
-            byte[] buf = new byte[8192];
-            int n;
-            while ((n = is.read(buf)) > 0) fos.write(buf, 0, n);
-        }
-        return out;
-    }
-
-    protected void copyAtlasTextures(File atlasFile) {
+    private void copyAtlasTexturesCached(File atlasFile) {
         Set<String> textureNames = new HashSet<>();
         try {
             String atlasContent = readFileAsString(atlasFile);
@@ -166,7 +179,10 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 if (name == null) continue;
                 if (name.equals(skeletonFileHandle.name()) || name.equals(atlasFileHandle.name())) continue;
                 try {
-                    File temp = copyUriToTemp(uri, name);
+                    cacheManager.copyUriToCache(uri, name,
+                            cacheManager.getFileSize(uri),
+                            cacheManager.getLastModified(uri));
+                    File temp = cacheManager.getCachedFile(uri, name);
                     scaleTextureIfNeeded(temp);
                 } catch (Exception e) {
                     Log.w(TAG, "Could not copy " + name + ": " + e.getMessage());
@@ -192,7 +208,10 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             }
             if (texUri != null) {
                 try {
-                    File temp = copyUriToTemp(texUri, texName);
+                    cacheManager.copyUriToCache(texUri, texName,
+                            cacheManager.getFileSize(texUri),
+                            cacheManager.getLastModified(texUri));
+                    File temp = cacheManager.getCachedFile(texUri, texName);
                     scaleTextureIfNeeded(temp);
                 } catch (Exception e) {
                     Log.w(TAG, "Could not copy texture " + texName + ": " + e.getMessage());
