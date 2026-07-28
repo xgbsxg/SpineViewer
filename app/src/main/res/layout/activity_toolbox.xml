@@ -16,26 +16,18 @@
         android:layout_marginBottom="24dp" />
 
     <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/atlas_scaler_title"
-        android:textSize="18sp"
-        android:textColor="@color/text_primary"
-        android:layout_marginBottom="8dp" />
-
-    <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/atlas_scaler_description"
+        android:text="@string/export_frames_description"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:layout_marginBottom="16dp" />
 
     <TextView
-        android:id="@+id/tv_atlas_status"
+        android:id="@+id/tv_skeleton_status"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/no_atlas_selected"
+        android:text="@string/no_skeleton_selected"
         android:textSize="14sp"
         android:textColor="@color/text_secondary"
         android:background="@color/surface"
@@ -43,45 +35,28 @@
         android:layout_marginBottom="16dp" />
 
     <Button
-        android:id="@+id/btn_select_atlas"
+        android:id="@+id/btn_select_skeleton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/select_atlas_file"
+        android:text="@string/select_skeleton_file"
         android:layout_marginBottom="16dp" />
 
-    <LinearLayout
+    <EditText
+        android:id="@+id/et_animation_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:layout_marginBottom="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/scale_factor_label"
-            android:textSize="16sp"
-            android:textColor="@color/text_primary"
-            android:layout_marginEnd="16dp" />
-
-        <EditText
-            android:id="@+id/et_scale_factor"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:inputType="numberDecimal"
-            android:text="1.0"
-            android:padding="12dp"
-            android:background="@color/surface"
-            android:textSize="16sp" />
-
-    </LinearLayout>
+        android:hint="@string/animation_name_hint"
+        android:inputType="text"
+        android:padding="12dp"
+        android:background="@color/surface"
+        android:textSize="16sp"
+        android:layout_marginBottom="16dp" />
 
     <Button
-        android:id="@+id/btn_scale_and_save"
+        android:id="@+id/btn_export_frames"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/scale_and_save"
+        android:text="@string/export_frames"
         android:backgroundTint="@color/accent"
         android:textColor="@android:color/white" />
 
