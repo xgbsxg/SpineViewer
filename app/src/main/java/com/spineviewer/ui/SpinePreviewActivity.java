@@ -1,12 +1,17 @@
 package com.spineviewer.ui;
 
+import android.app.ProgressDialog;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.MotionEvent;
 import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
@@ -16,17 +21,27 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
+import androidx.documentfile.provider.DocumentFile;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.android.AndroidApplication;
 import com.badlogic.gdx.backends.android.AndroidApplicationConfiguration;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.utils.ScreenUtils;
 import com.spineviewer.R;
 import com.spineviewer.spine.SpineEngineFactory;
 import com.spineviewer.spine.SpineVersion;
 import com.spineviewer.spine.SpineViewerEngine;
 import com.spineviewer.utils.PreferenceManager;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class SpinePreviewActivity extends AndroidApplication
         implements SpineViewerEngine.StateListener {
@@ -48,6 +63,7 @@ public class SpinePreviewActivity extends AndroidApplication
     private Switch switchPremultiply;
     private ImageButton btnTogglePanel, btnResetCamera, btnShowBones;
     private ImageButton btnPause, btnPrev, btnNext, btnChangeVersion;
+    private Button btnExportFrames;
 
     private ScaleGestureDetector scaleDetector;
     private float lastTouchX, lastTouchY;
@@ -61,6 +77,8 @@ public class SpinePreviewActivity extends AndroidApplication
     private int currentAnimIdx = 0;
     private boolean[] selectedSkins;
     private ArrayList<Uri> textureUris;
+
+    private boolean isExporting = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +114,7 @@ public class SpinePreviewActivity extends AndroidApplication
         btnPrev          = findViewById(R.id.btn_prev_anim);
         btnNext          = findViewById(R.id.btn_next_anim);
         btnChangeVersion = findViewById(R.id.btn_change_version);
+        btnExportFrames  = findViewById(R.id.btn_export_frames);
 
         tvVersion.setText(getString(R.string.version_prefix) + currentVersion.getDisplayName());
         tvStatus.setText(R.string.loading);
@@ -148,6 +167,8 @@ public class SpinePreviewActivity extends AndroidApplication
 
         btnChangeVersion.setOnClickListener(v -> showVersionPicker());
 
+        btnExportFrames.setOnClickListener(v -> showExportDialog());
+
         ImageButton btnBack = findViewById(R.id.btn_back);
         if (btnBack != null) btnBack.setOnClickListener(v -> finish());
 
@@ -170,6 +191,223 @@ public class SpinePreviewActivity extends AndroidApplication
                         return true;
                     }
                 });
+    }
+
+    private void showExportDialog() {
+        if (animations == null || animations.isEmpty()) {
+            Toast.makeText(this, "没有可导出的动画", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("导出帧序列");
+
+        View view = getLayoutInflater().inflate(R.layout.dialog_export_frames, null);
+        EditText etAnimationName = view.findViewById(R.id.et_export_animation_name);
+        EditText etStartFrame = view.findViewById(R.id.et_export_start_frame);
+        EditText etEndFrame = view.findViewById(R.id.et_export_end_frame);
+        EditText etFps = view.findViewById(R.id.et_export_fps);
+
+        etAnimationName.setText(spinnerAnimation.getSelectedItem().toString());
+        etStartFrame.setText("0");
+        etEndFrame.setText("100");
+        etFps.setText("30");
+
+        builder.setView(view);
+        builder.setPositiveButton("导出", (dialog, which) -> {
+            String animName = etAnimationName.getText().toString().trim();
+            if (animName.isEmpty()) {
+                Toast.makeText(this, "请输入动画名称", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            int startFrame, endFrame, fps;
+            try {
+                startFrame = Integer.parseInt(etStartFrame.getText().toString().trim());
+                endFrame = Integer.parseInt(etEndFrame.getText().toString().trim());
+                fps = Integer.parseInt(etFps.getText().toString().trim());
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "请输入有效的数字", Toast.LENGTH_SHORT).show();
+                return;
+            }
+            if (startFrame < 0) startFrame = 0;
+            if (endFrame <= startFrame) endFrame = startFrame + 1;
+            if (fps < 1) fps = 1;
+            if (fps > 60) fps = 60;
+
+            startExport(animName, startFrame, endFrame, fps);
+        });
+        builder.setNegativeButton("取消", null);
+        builder.show();
+    }
+
+    private void startExport(String animName, int startFrame, int endFrame, int fps) {
+        if (isExporting) {
+            Toast.makeText(this, "正在导出中", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (engine == null || !engine.isLoaded()) {
+            Toast.makeText(this, "引擎未就绪", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        engine.setPaused(true);
+        btnPause.setImageResource(android.R.drawable.ic_media_play);
+
+        new ExportTask().execute(animName, startFrame, endFrame, fps);
+    }
+
+    private class ExportTask extends AsyncTask<Object, Integer, String> {
+
+        private ProgressDialog progressDialog;
+        private int totalFrames;
+
+        @Override
+        protected void onPreExecute() {
+            isExporting = true;
+            progressDialog = new ProgressDialog(SpinePreviewActivity.this);
+            progressDialog.setMessage("正在导出帧...");
+            progressDialog.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDialog.setCancelable(false);
+            progressDialog.show();
+        }
+
+        @Override
+        protected String doInBackground(Object... params) {
+            String animName = (String) params[0];
+            int startFrame = (int) params[1];
+            int endFrame = (int) params[2];
+            int fps = (int) params[3];
+
+            totalFrames = endFrame - startFrame + 1;
+            publishProgress(0);
+
+            String storagePath = prefManager.getStorageDirectoryUri();
+            File outputDir;
+
+            if (storagePath != null) {
+                try {
+                    Uri uri = Uri.parse(storagePath);
+                    DocumentFile doc = DocumentFile.fromTreeUri(SpinePreviewActivity.this, uri);
+                    if (doc != null && doc.exists()) {
+                        String docPath = doc.getUri().getPath();
+                        if (docPath != null && docPath.startsWith("/tree/primary:")) {
+                            String relative = docPath.substring(13);
+                            File externalDir = Environment.getExternalStorageDirectory();
+                            outputDir = new File(externalDir, relative);
+                            if (!outputDir.exists()) {
+                                outputDir.mkdirs();
+                            }
+                        } else {
+                            outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                        }
+                    } else {
+                        outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    }
+                } catch (Exception e) {
+                    outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                }
+            } else {
+                outputDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            }
+
+            String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
+            String folderName = animName + "_" + timestamp;
+            File frameDir = new File(outputDir, folderName);
+            if (!frameDir.exists()) {
+                frameDir.mkdirs();
+            }
+
+            float frameStep = 1f / fps;
+            float duration = engine.getAnimationDuration();
+            if (duration <= 0) {
+                return "ERROR:无法获取动画时长";
+            }
+
+            float totalTime = duration;
+            float currentTime = startFrame * frameStep;
+            float maxTime = endFrame * frameStep;
+            if (maxTime > totalTime) {
+                maxTime = totalTime;
+                totalFrames = (int) ((maxTime - currentTime) / frameStep) + 1;
+            }
+
+            int frameIndex = 0;
+            while (currentTime <= maxTime && !isCancelled()) {
+                engine.setAnimationPosition(currentTime / totalTime);
+                Gdx.gl.glFinish();
+
+                byte[] pixels = ScreenUtils.getFrameBufferPixels(0, 0,
+                        Gdx.graphics.getBackBufferWidth(),
+                        Gdx.graphics.getBackBufferHeight(), true);
+
+                Pixmap pixmap = new Pixmap(
+                        Gdx.graphics.getBackBufferWidth(),
+                        Gdx.graphics.getBackBufferHeight(),
+                        Pixmap.Format.RGBA8888);
+                pixmap.getPixels().put(pixels);
+                pixmap.getPixels().position(0);
+
+                String fileName = String.format(Locale.getDefault(), "frame_%04d.png", frameIndex);
+                File frameFile = new File(frameDir, fileName);
+
+                PixmapIO.writePNG(frameFile, pixmap);
+                pixmap.dispose();
+
+                frameIndex++;
+                currentTime += frameStep;
+                int progress = (int) ((float) frameIndex / totalFrames * 100);
+                publishProgress(Math.min(progress, 100));
+            }
+
+            engine.setAnimation(animations.get(currentAnimIdx), true);
+            engine.setPaused(false);
+            runOnUiThread(() -> btnPause.setImageResource(android.R.drawable.ic_media_pause));
+
+            return "SUCCESS:" + frameDir.getAbsolutePath() + ":" + frameIndex;
+        }
+
+        @Override
+        protected void onProgressUpdate(Integer... values) {
+            if (progressDialog != null) {
+                progressDialog.setProgress(values[0]);
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            isExporting = false;
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+
+            if (result == null) {
+                Toast.makeText(SpinePreviewActivity.this, "导出失败", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if (result.startsWith("ERROR:")) {
+                Toast.makeText(SpinePreviewActivity.this,
+                        getString(R.string.export_failed, result.substring(6)),
+                        Toast.LENGTH_LONG).show();
+            } else if (result.startsWith("SUCCESS:")) {
+                String[] parts = result.split(":");
+                String path = parts[1];
+                int count = Integer.parseInt(parts[2]);
+                Toast.makeText(SpinePreviewActivity.this,
+                        "导出完成，共 " + count + " 帧\n保存位置：" + path,
+                        Toast.LENGTH_LONG).show();
+            }
+        }
+
+        @Override
+        protected void onCancelled() {
+            isExporting = false;
+            if (progressDialog != null) {
+                progressDialog.dismiss();
+            }
+            engine.setPaused(false);
+            runOnUiThread(() -> btnPause.setImageResource(android.R.drawable.ic_media_pause));
+        }
     }
 
     private void launchEngine(SpineVersion version) {
