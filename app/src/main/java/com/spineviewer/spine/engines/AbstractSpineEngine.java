@@ -20,6 +20,7 @@ import com.badlogic.gdx.utils.BufferUtils;
 import com.spineviewer.spine.SpineViewerEngine;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -146,7 +147,7 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
     protected void copyAtlasTextures(File atlasFile) {
         Set<String> textureNames = new HashSet<>();
         try {
-            String atlasContent = new String(java.nio.file.Files.readAllBytes(atlasFile.toPath()));
+            String atlasContent = readFileAsString(atlasFile);
             String[] lines = atlasContent.split("\\r?\\n");
             for (String line : lines) {
                 String trimmed = line.trim();
@@ -199,6 +200,22 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             } else {
                 Log.w(TAG, "Could not find URI for texture: " + texName);
             }
+        }
+    }
+
+    private String readFileAsString(File file) throws IOException {
+        FileInputStream fis = new FileInputStream(file);
+        try {
+            byte[] data = new byte[(int) file.length()];
+            int offset = 0;
+            while (offset < data.length) {
+                int read = fis.read(data, offset, data.length - offset);
+                if (read < 0) break;
+                offset += read;
+            }
+            return new String(data, "UTF-8");
+        } finally {
+            fis.close();
         }
     }
 
@@ -293,7 +310,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
     }
 
     protected void updateRendererAlpha() {
-        // 由子类覆盖
     }
 
     @Override
