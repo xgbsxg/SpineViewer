@@ -96,7 +96,6 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
         holder.changeVersionBtn.setOnClickListener(v ->
                 listener.onVersionChangeClick(info, holder.getAdapterPosition()));
 
-        // 长按删除
         holder.itemView.setOnLongClickListener(v -> {
             listener.onFileLongClick(info, holder.getAdapterPosition());
             return true;
