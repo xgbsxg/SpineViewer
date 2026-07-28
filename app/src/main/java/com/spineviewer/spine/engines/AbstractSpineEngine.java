@@ -43,6 +43,8 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
 
     protected boolean premultipliedAlpha = false;
 
+    protected float animDuration = 0f;
+
     @Override
     public void create() {
         batch = new PolygonSpriteBatch();
@@ -143,11 +145,7 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         return out;
     }
 
-    /**
-     * 复制 Atlas 中实际引用的纹理，而不是所有 sibling 文件，减少 IO 操作。
-     */
     protected void copyAtlasTextures(File atlasFile) {
-        // 1. 解析 atlas 获取所有纹理文件名
         Set<String> textureNames = new HashSet<>();
         try {
             String atlasContent = new String(java.nio.file.Files.readAllBytes(atlasFile.toPath()));
@@ -162,7 +160,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             Log.w(TAG, "Failed to parse atlas, will copy all sibling files", e);
         }
 
-        // 如果没有解析到纹理名，回退到复制所有 sibling
         if (textureNames.isEmpty() && textureUris != null) {
             Log.d(TAG, "No texture names found in atlas, copying all sibling files");
             for (Uri uri : textureUris) {
@@ -179,10 +176,8 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             return;
         }
 
-        // 只复制 atlas 中引用的纹理
         Log.d(TAG, "Copying " + textureNames.size() + " textures referenced in atlas");
         for (String texName : textureNames) {
-            // 构建该纹理的 URI（通过 sibling 列表或从 atlasUri 构建）
             Uri texUri = null;
             if (textureUris != null) {
                 for (Uri uri : textureUris) {
@@ -193,7 +188,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                     }
                 }
             }
-            // 如果没找到，尝试从 atlasUri 构建 sibling URI
             if (texUri == null) {
                 texUri = buildSiblingUri(atlasUri, texName);
             }
@@ -210,9 +204,6 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
     }
 
-    /**
-     * 优化纹理缩放：使用 inSampleSize 采样，避免完整解码后再缩放，减少内存和耗时。
-     */
     private void scaleTextureIfNeeded(File imageFile) {
         BitmapFactory.Options opts = new BitmapFactory.Options();
         opts.inJustDecodeBounds = true;
@@ -222,21 +213,18 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         if (width <= 0 || height <= 0) return;
 
         if (width > maxTextureSize || height > maxTextureSize) {
-            // 计算合适的采样率
             int sampleSize = 1;
             while (width / sampleSize > maxTextureSize || height / sampleSize > maxTextureSize) {
                 sampleSize *= 2;
             }
             opts.inJustDecodeBounds = false;
             opts.inSampleSize = sampleSize;
-            opts.inPreferredConfig = Bitmap.Config.RGB_565; // 降低色彩深度，减少内存
+            opts.inPreferredConfig = Bitmap.Config.RGB_565;
 
             Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath(), opts);
             if (bitmap == null) return;
 
-            // 保存缩放后的图片（覆盖原文件）
             try (FileOutputStream fos = new FileOutputStream(imageFile)) {
-                // 使用 PNG 格式，但可考虑 JPEG 以减小体积（但可能影响透明度）
                 bitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
                 Log.d(TAG, "Scaled texture from " + width + "x" + height + " to " +
                         bitmap.getWidth() + "x" + bitmap.getHeight() +
@@ -317,6 +305,14 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             updateRendererAlpha();
         }
     }
+
+    @Override
+    public float getAnimationDuration() {
+        return animDuration;
+    }
+
+    @Override
+    public abstract void setAnimationPosition(float position);
 
     @Override
     public List<String> getAnimations() { return new ArrayList<>(); }
