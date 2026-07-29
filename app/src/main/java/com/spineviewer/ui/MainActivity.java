@@ -112,7 +112,23 @@ public class MainActivity extends AppCompatActivity
                 result -> {
                     boolean granted = true;
                     for (Boolean v : result.values()) {
-                        if (!v R       Uri = prefManager.getDefaultFolderUri();
+                        if (!v) {
+                            granted = false;
+                            break;
+                        }
+                    }
+                    if (granted) {
+                        openFolderPicker();
+                    } else {
+                        Toast.makeText(this, R.string.need_permission, Toast.LENGTH_LONG).show();
+                    }
+                });
+
+        handleIncomingIntent(getIntent());
+
+        loadPersistedList();
+
+        String defaultUri = prefManager.getDefaultFolderUri();
         if (defaultUri != null) {
             Uri uri = Uri.parse(defaultUri);
             if (uri != null) {
@@ -153,7 +169,9 @@ public class MainActivity extends AppCompatActivity
                 prefManager.saveFileList(fileList);
                 updateEmptyView();
 
-                Snackbar.make(recyclerView, getString(R.string.delete_message, removed.name), Snackbar.LENGTH_LONG)
+                Snackbar.make(recyclerView,
+                        getString(R.string.delete_message, removed.name),
+                        Snackbar.LENGTH_LONG)
                         .setAction(R.string.cancel, v -> {
                             fileList.add(position, removed);
                             adapter.setItems(fileList);
@@ -256,7 +274,9 @@ public class MainActivity extends AppCompatActivity
                     adapter.removeItems(selected);
                     prefManager.saveFileList(fileList);
                     updateEmptyView();
-                    Toast.makeText(this, getString(R.string.deleted, selected.size()), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,
+                            getString(R.string.deleted, selected.size()),
+                            Toast.LENGTH_SHORT).show();
                     if (actionMode != null) {
                         actionMode.finish();
                     }
@@ -325,7 +345,10 @@ public class MainActivity extends AppCompatActivity
         SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(String query) { return false; }
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
             @Override
             public boolean onQueryTextChange(String newText) {
                 adapter.filter(newText);
@@ -406,7 +429,9 @@ public class MainActivity extends AppCompatActivity
     }
 
     private boolean needsPermissions() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) return false;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return false;
+        }
         return ContextCompat.checkSelfPermission(this,
                 Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED;
     }
@@ -526,8 +551,9 @@ public class MainActivity extends AppCompatActivity
     private void openPreview(SpineFileInfo info) {
         Intent intent = new Intent(this, SpinePreviewActivity.class);
         intent.putExtra(SpinePreviewActivity.EXTRA_SKELETON_URI, info.skeletonUri.toString());
-        if (info.atlasUri != null)
+        if (info.atlasUri != null) {
             intent.putExtra(SpinePreviewActivity.EXTRA_ATLAS_URI, info.atlasUri.toString());
+        }
         intent.putExtra(SpinePreviewActivity.EXTRA_VERSION, info.getEffectiveVersion().name());
         intent.putExtra(SpinePreviewActivity.EXTRA_NAME, info.name);
         if (!info.siblingUris.isEmpty()) {
@@ -543,7 +569,9 @@ public class MainActivity extends AppCompatActivity
         int currentIdx = 0;
         for (int i = 0; i < versions.length; i++) {
             labels[i] = getString(R.string.version_item, versions[i].getDisplayName());
-            if (versions[i] == info.getEffectiveVersion()) currentIdx = i;
+            if (versions[i] == info.getEffectiveVersion()) {
+                currentIdx = i;
+            }
         }
 
         AlertDialog dialog = new AlertDialog.Builder(this)
