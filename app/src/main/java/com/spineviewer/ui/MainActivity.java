@@ -9,7 +9,11 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
@@ -20,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -40,12 +45,17 @@ public class MainActivity extends AppCompatActivity
     private SpineFileAdapter adapter;
     private View emptyView;
     private View loadingView;
+    private TextView tvScanProgress;
     private List<SpineFileInfo> fileList = new ArrayList<>();
     private PreferenceManager prefManager;
 
     private ActivityResultLauncher<Uri> folderPickerLauncher;
     private ActivityResultLauncher<String[]> permissionLauncher;
     private ActivityResultLauncher<String> filePicker;
+
+    private MenuItem refreshMenuItem;
+    private Animation refreshAnimation;
+    private boolean isScanning = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,10 +70,15 @@ public class MainActivity extends AppCompatActivity
         recyclerView = findViewById(R.id.recycler_view);
         emptyView = findViewById(R.id.empty_view);
         loadingView = findViewById(R.id.loading_view);
+        tvScanProgress = findViewById(R.id.tv_scan_progress);
 
         adapter = new SpineFileAdapter(this, fileList, this);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         recyclerView.setAdapter(adapter);
+
+        setupSwipeToDelete();
+
+        refreshAnimation = AnimationUtils.loadAnimation(this, R.drawable.anim_refresh_rotate);
 
         folderPickerLauncher = registerForActivityResult(
                 new ActivityResultContracts.OpenDocumentTree(),
@@ -115,6 +130,36 @@ public class MainActivity extends AppCompatActivity
         updateEmptyView();
     }
 
+    private void setupSwipeToDelete() {
+        ItemTouchHelper.SimpleCallback callback = new ItemTouchHelper.SimpleCallback(
+                0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView,
+                                  @NonNull RecyclerView.ViewHolder viewHolder,
+                                  @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int position = viewHolder.getAdapterPosition();
+                if (position < 0 || position >= fileList.size()) {
+                    adapter.notifyItemChanged(position);
+                    return;
+                }
+                SpineFileInfo removed = fileList.remove(position);
+                adapter.setItems(fileList);
+                prefManager.saveFileList(fileList);
+                updateEmptyView();
+                Toast.makeText(MainActivity.this,
+                        getString(R.string.delete_message, removed.name), Toast.LENGTH_SHORT).show();
+            }
+        };
+
+        ItemTouchHelper itemTouchHelper = new ItemTouchHelper(callback);
+        itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
+
     private void showWelcomeDialog() {
         AlertDialog dialog = new AlertDialog.Builder(this)
                 .setTitle(R.string.welcome_title)
@@ -151,6 +196,8 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
+        refreshMenuItem = menu.findItem(R.id.action_refresh);
+
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -170,7 +217,9 @@ public class MainActivity extends AppCompatActivity
     public boolean onOptionsItemSelected(@NonNull MenuItem item) {
         int id = item.getItemId();
         if (id == R.id.action_refresh) {
-            refreshList();
+            if (!isScanning) {
+                refreshList();
+            }
             return true;
         }
         if (id == R.id.action_open_file) {
@@ -186,6 +235,26 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void startRefreshAnimation() {
+        if (refreshMenuItem == null) return;
+        View actionView = refreshMenuItem.getActionView();
+        if (actionView instanceof ImageView) {
+            ImageView refreshIcon = (ImageView) actionView;
+            refreshIcon.setImageDrawable(refreshMenuItem.getIcon());
+            refreshIcon.startAnimation(refreshAnimation);
+        }
+    }
+
+    private void stopRefreshAnimation() {
+        if (refreshMenuItem == null) return;
+        View actionView = refreshMenuItem.getActionView();
+        if (actionView instanceof ImageView) {
+            ImageView refreshIcon = (ImageView) actionView;
+            refreshIcon.clearAnimation();
+            refreshIcon.setImageDrawable(null);
+        }
     }
 
     private void refreshList() {
@@ -242,12 +311,45 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void scanFolder(Uri treeUri) {
+        if (isScanning) return;
+        isScanning = true;
+        startRefreshAnimation();
+
         loadingView.setVisibility(View.VISIBLE);
         emptyView.setVisibility(View.GONE);
+        if (tvScanProgress != null) {
+            tvScanProgress.setText(R.string.scanning);
+        }
+
+        boolean scanSubdirs = prefManager.getScanSubdirectories();
 
         new Thread(() -> {
-            List<SpineFileInfo> found = FileScanner.scanForSpineFiles(this, treeUri);
+            List<SpineFileInfo> found = FileScanner.scanForSpineFiles(this, treeUri, scanSubdirs,
+                    new FileScanner.ScanCallback() {
+                        @Override
+                        public void onFileFound(SpineFileInfo info, int totalSoFar) {
+                            runOnUiThread(() -> {
+                                if (tvScanProgress != null) {
+                                    tvScanProgress.setText(
+                                            getString(R.string.scan_progress, totalSoFar));
+                                }
+                            });
+                        }
+
+                        @Override
+                        public void onScanSubfolder(String folderName) {
+                            runOnUiThread(() -> {
+                                if (tvScanProgress != null) {
+                                    tvScanProgress.setText(
+                                            getString(R.string.scanning_subfolders, folderName));
+                                }
+                            });
+                        }
+                    });
+
             runOnUiThread(() -> {
+                isScanning = false;
+                stopRefreshAnimation();
                 loadingView.setVisibility(View.GONE);
                 if (!found.isEmpty()) {
                     fileList.clear();
@@ -260,6 +362,9 @@ public class MainActivity extends AppCompatActivity
                             Toast.LENGTH_SHORT).show();
                 } else {
                     Toast.makeText(this, R.string.no_files_found, Toast.LENGTH_SHORT).show();
+                    if (fileList.isEmpty()) {
+                        updateEmptyView();
+                    }
                 }
             });
         }).start();
@@ -300,16 +405,16 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onFileLongClick(SpineFileInfo info, int position) {
         AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle("删除条目")
-                .setMessage("确定要删除 \"" + info.name + "\" 吗？")
-                .setPositiveButton("删除", (d, which) -> {
+                .setTitle(R.string.delete_title)
+                .setMessage(getString(R.string.delete_message, info.name))
+                .setPositiveButton(R.string.delete, (d, which) -> {
                     fileList.remove(position);
                     adapter.setItems(fileList);
                     prefManager.saveFileList(fileList);
                     updateEmptyView();
-                    Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.deleted, 1), Toast.LENGTH_SHORT).show();
                 })
-                .setNegativeButton("取消", null)
+                .setNegativeButton(R.string.cancel, null)
                 .create();
         dialog.show();
         Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
