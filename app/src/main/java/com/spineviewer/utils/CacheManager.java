@@ -143,6 +143,27 @@ public class CacheManager {
         }
     }
 
+    public long getCacheSize() {
+        if (!cacheRoot.exists()) {
+            return 0;
+        }
+        return getFolderSize(cacheRoot);
+    }
+
+    private long getFolderSize(File dir) {
+        long size = 0;
+        File[] files = dir.listFiles();
+        if (files == null) return 0;
+        for (File f : files) {
+            if (f.isDirectory()) {
+                size += getFolderSize(f);
+            } else {
+                size += f.length();
+            }
+        }
+        return size;
+    }
+
     private File getCacheIndexFile(Uri uri) {
         File cacheDir = getCacheDirForUri(uri);
         return new File(cacheDir, ".cache_index");
