@@ -76,7 +76,26 @@ public class SpinePreviewActivity extends AndroidApplication
         textureUris    = getParcelableUriListCompat(getIntent(), EXTRA_TEXTURE_URIS);
 
         bindViews();
+        applySettings();
         launchEngine(currentVersion);
+    }
+
+    private void applySettings() {
+        boolean defaultPremultiply = prefManager.getDefaultPremultiplyAlpha();
+        switchPremultiply.setChecked(defaultPremultiply);
+
+        float defaultSpeed = prefManager.getDefaultAnimationSpeed();
+        int progress = Math.round(defaultSpeed * 10) - 1;
+        if (progress < 0) progress = 0;
+        if (progress > 19) progress = 19;
+        seekTimeScale.setProgress(progress);
+        tvTimeScale.setText(String.format("%.1f×", defaultSpeed));
+
+        showBones = prefManager.getDefaultShowBones();
+        btnShowBones.setAlpha(showBones ? 1.0f : 0.4f);
+        if (engine != null) {
+            engine.setShowBones(showBones);
+        }
     }
 
     private void bindViews() {
@@ -100,8 +119,6 @@ public class SpinePreviewActivity extends AndroidApplication
         tvStatus.setText(R.string.loading);
 
         seekTimeScale.setMax(19);
-        seekTimeScale.setProgress(9);
-        tvTimeScale.setText(R.string.default_speed);
         seekTimeScale.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override public void onProgressChanged(SeekBar s, int p, boolean user) {
                 float scale = (p + 1) / 10f;
@@ -189,6 +206,11 @@ public class SpinePreviewActivity extends AndroidApplication
 
         boolean premultiplyEnabled = switchPremultiply.isChecked();
         engine.setPremultipliedAlpha(premultiplyEnabled);
+
+        float currentSpeed = (seekTimeScale.getProgress() + 1) / 10f;
+        engine.setTimeScale(currentSpeed);
+
+        engine.setShowBones(showBones);
 
         AndroidApplicationConfiguration config = new AndroidApplicationConfiguration();
         config.useGL30 = false;
