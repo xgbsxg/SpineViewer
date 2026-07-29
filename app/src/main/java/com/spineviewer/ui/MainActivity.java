@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.view.ActionMode;
 import androidx.appcompat.widget.SearchView;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.content.ContextCompat;
@@ -57,6 +58,9 @@ public class MainActivity extends AppCompatActivity
     private Animation refreshAnimation;
     private boolean isScanning = false;
 
+    private ActionMode actionMode;
+    private ActionModeCallback actionModeCallback;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +81,7 @@ public class MainActivity extends AppCompatActivity
         recyclerView.setAdapter(adapter);
 
         setupSwipeToDelete();
+        setupMultiSelect();
 
         refreshAnimation = AnimationUtils.loadAnimation(this, R.drawable.anim_refresh_rotate);
 
@@ -142,6 +147,10 @@ public class MainActivity extends AppCompatActivity
 
             @Override
             public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                if (adapter.isMultiSelectMode()) {
+                    adapter.notifyItemChanged(viewHolder.getAdapterPosition());
+                    return;
+                }
                 int position = viewHolder.getAdapterPosition();
                 if (position < 0 || position >= fileList.size()) {
                     adapter.notifyItemChanged(position);
@@ -158,6 +167,112 @@ public class MainActivity extends AppCompatActivity
 
         ItemTouchHelper itemTouchHelper = new ItemTouchHelper(callback);
         itemTouchHelper.attachToRecyclerView(recyclerView);
+    }
+
+    private void setupMultiSelect() {
+        actionModeCallback = new ActionModeCallback();
+
+        adapter.setOnMultiSelectListener(count -> {
+            if (actionMode != null) {
+                if (count == 0) {
+                    actionMode.finish();
+                } else {
+                    actionMode.setTitle(getString(R.string.selected_count, count));
+                }
+            }
+        });
+    }
+
+    private class ActionModeCallback implements ActionMode.Callback {
+        @Override
+        public boolean onCreateActionMode(ActionMode mode, Menu menu) {
+            mode.getMenuInflater().inflate(R.menu.menu_main, menu);
+            MenuItem searchItem = menu.findItem(R.id.action_search);
+            if (searchItem != null) searchItem.setVisible(false);
+            MenuItem refreshItem = menu.findItem(R.id.action_refresh);
+            if (refreshItem != null) refreshItem.setVisible(false);
+            MenuItem clearItem = menu.findItem(R.id.action_clear);
+            if (clearItem != null) clearItem.setVisible(false);
+            MenuItem settingsItem = menu.findItem(R.id.action_settings);
+            if (settingsItem != null) settingsItem.setVisible(false);
+            MenuItem openFileItem = menu.findItem(R.id.action_open_file);
+            if (openFileItem != null) openFileItem.setVisible(false);
+
+            menu.add(0, R.id.action_select_all, 0, R.string.select_all)
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+            menu.add(0, R.id.action_delete_selected, 0, R.string.delete)
+                    .setIcon(android.R.drawable.ic_menu_delete)
+                    .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
+
+            adapter.setMultiSelectMode(true);
+            return true;
+        }
+
+        @Override
+        public boolean onPrepareActionMode(ActionMode mode, Menu menu) {
+            return false;
+        }
+
+        @Override
+        public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
+            int id = item.getItemId();
+            if (id == R.id.action_select_all) {
+                MenuItem selectAllItem = mode.getMenu().findItem(R.id.action_select_all);
+                if (adapter.getSelectedCount() == adapter.getItemCount()) {
+                    adapter.deselectAll();
+                    if (selectAllItem != null) {
+                        selectAllItem.setTitle(R.string.select_all);
+                    }
+                } else {
+                    adapter.selectAll();
+                    if (selectAllItem != null) {
+                        selectAllItem.setTitle(R.string.deselect_all);
+                    }
+                }
+                return true;
+            }
+            if (id == R.id.action_delete_selected) {
+                deleteSelected();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public void onDestroyActionMode(ActionMode mode) {
+            actionMode = null;
+            adapter.setMultiSelectMode(false);
+        }
+    }
+
+    private void deleteSelected() {
+        List<SpineFileInfo> selected = adapter.getSelectedItems();
+        if (selected.isEmpty()) return;
+
+        AlertDialog dialog = new AlertDialog.Builder(this)
+                .setTitle(R.string.batch_delete_title)
+                .setMessage(getString(R.string.batch_delete_message, selected.size()))
+                .setPositiveButton(R.string.delete, (d, which) -> {
+                    fileList.removeAll(selected);
+                    adapter.removeItems(selected);
+                    prefManager.saveFileList(fileList);
+                    updateEmptyView();
+                    Toast.makeText(this, getString(R.string.deleted, selected.size()), Toast.LENGTH_SHORT).show();
+                    if (actionMode != null) {
+                        actionMode.finish();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, null)
+                .create();
+        dialog.show();
+        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        if (positive != null) {
+            positive.setTextColor(ContextCompat.getColor(this, R.color.accent));
+        }
+        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
+        if (negative != null) {
+            negative.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
+        }
     }
 
     private void showWelcomeDialog() {
@@ -193,10 +308,7 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-
-        refreshMenuItem = menu.findItem(R.id.action_refresh);
+    public boolean onCreateOptionsMenu       enu refresh menu.findItem(R.id.action_refresh);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
@@ -404,27 +516,10 @@ public class MainActivity extends AppCompatActivity
 
     @Override
     public void onFileLongClick(SpineFileInfo info, int position) {
-        AlertDialog dialog = new AlertDialog.Builder(this)
-                .setTitle(R.string.delete_title)
-                .setMessage(getString(R.string.delete_message, info.name))
-                .setPositiveButton(R.string.delete, (d, which) -> {
-                    fileList.remove(position);
-                    adapter.setItems(fileList);
-                    prefManager.saveFileList(fileList);
-                    updateEmptyView();
-                    Toast.makeText(this, getString(R.string.deleted, 1), Toast.LENGTH_SHORT).show();
-                })
-                .setNegativeButton(R.string.cancel, null)
-                .create();
-        dialog.show();
-        Button positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
-        if (positive != null) {
-            positive.setTextColor(ContextCompat.getColor(this, R.color.accent));
+        if (actionMode == null) {
+            actionMode = startSupportActionMode(actionModeCallback);
         }
-        Button negative = dialog.getButton(AlertDialog.BUTTON_NEGATIVE);
-        if (negative != null) {
-            negative.setTextColor(ContextCompat.getColor(this, R.color.text_secondary));
-        }
+        adapter.toggleSelection(position);
     }
 
     private void openPreview(SpineFileInfo info) {
@@ -435,8 +530,7 @@ public class MainActivity extends AppCompatActivity
         intent.putExtra(SpinePreviewActivity.EXTRA_VERSION, info.getEffectiveVersion().name());
         intent.putExtra(SpinePreviewActivity.EXTRA_NAME, info.name);
         if (!info.siblingUris.isEmpty()) {
-            intent.putParcelableArrayListExtra(SpinePreviewActivity.EXTRA_TEXTURE_URIS,
-                new ArrayList<>(info.siblingUris));
+            intent.putP.EURE new ArrayList<>(info.siblingUris));
         }
         startActivity(intent);
     }
