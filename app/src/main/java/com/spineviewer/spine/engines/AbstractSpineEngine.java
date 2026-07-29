@@ -176,7 +176,7 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
             renderSkeleton(delta);
         } catch (Exception e) {
             Log.e(TAG, "Render error", e);
-            notifyError("Render error: " + e.getMessage());
+            notifyRenderError("Render error: " + e.getMessage());
         }
 
         if (showBones) {
