@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.widget.Button;
@@ -29,6 +30,7 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.android.material.snackbar.Snackbar;
 import com.spineviewer.R;
 import com.spineviewer.spine.SpineFileDetector;
 import com.spineviewer.spine.SpineFileInfo;
@@ -110,17 +112,7 @@ public class MainActivity extends AppCompatActivity
                 result -> {
                     boolean granted = true;
                     for (Boolean v : result.values()) {
-                        if (!v) { granted = false; break; }
-                    }
-                    if (granted) openFolderPicker();
-                    else Toast.makeText(this, R.string.need_permission, Toast.LENGTH_LONG).show();
-                });
-
-        handleIncomingIntent(getIntent());
-
-        loadPersistedList();
-
-        String defaultUri = prefManager.getDefaultFolderUri();
+                        if (!v R       Uri = prefManager.getDefaultFolderUri();
         if (defaultUri != null) {
             Uri uri = Uri.parse(defaultUri);
             if (uri != null) {
@@ -160,8 +152,15 @@ public class MainActivity extends AppCompatActivity
                 adapter.setItems(fileList);
                 prefManager.saveFileList(fileList);
                 updateEmptyView();
-                Toast.makeText(MainActivity.this,
-                        getString(R.string.delete_message, removed.name), Toast.LENGTH_SHORT).show();
+
+                Snackbar.make(recyclerView, getString(R.string.delete_message, removed.name), Snackbar.LENGTH_LONG)
+                        .setAction(R.string.cancel, v -> {
+                            fileList.add(position, removed);
+                            adapter.setItems(fileList);
+                            prefManager.saveFileList(fileList);
+                            updateEmptyView();
+                        })
+                        .show();
             }
         };
 
@@ -314,7 +313,11 @@ public class MainActivity extends AppCompatActivity
         MenuItem refreshItem = menu.findItem(R.id.action_refresh);
         ImageView refreshView = new ImageView(this);
         refreshView.setImageDrawable(refreshItem.getIcon());
+        int iconSize = getResources().getDimensionPixelSize(android.R.dimen.app_icon_size);
+        refreshView.setLayoutParams(new ViewGroup.LayoutParams(iconSize, iconSize));
+        refreshView.setScaleType(ImageView.ScaleType.FIT_CENTER);
         refreshView.setPadding(8, 8, 8, 8);
+        refreshView.setOnClickListener(v -> onOptionsItemSelected(refreshItem));
         refreshItem.setActionView(refreshView);
         refreshIconView = refreshView;
 
