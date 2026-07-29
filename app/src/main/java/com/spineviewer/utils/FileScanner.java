@@ -10,7 +10,6 @@ import androidx.documentfile.provider.DocumentFile;
 import com.spineviewer.spine.SpineFileDetector;
 import com.spineviewer.spine.SpineFileInfo;
 
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -19,22 +18,23 @@ import java.util.Map;
 public class FileScanner {
     private static final String TAG = "FileScanner";
 
-    public static List<SpineFileInfo> scanForSpineFiles(Context context, Uri treeUri) {
-        List<SpineFileInfo> results = new ArrayList<>();
-        DocumentFile root = DocumentFile.fromTreeUri(context, treeUri);
-        if (root == null) return results;
-
-        scanDirectory(context, root, results);
-        return results;
+    public interface ScanCallback {
+        void onFileFound(SpineFileInfo info, int totalSoFar);
+        void onScanSubfolder(String folderName);
     }
 
-    private static void scanDirectory(Context context, DocumentFile dir, List<SpineFileInfo> results) {
-        DocumentFile[] children = dir.listFiles();
-        if (children == null) return;
+    public static List<SpInfo> scanForSpineFiles(Context context, Uri treeUri) {
+        return scanForSpineFiles(context, treeUri, true, null);
+    }
 
-        Map<String, Uri> atlasMap = new HashMap<>();
-        Map<String, Uri> pngMap = new HashMap<>();
-        List<DocumentFile> skeletons = new ArrayList<>();
+    public static List<SpineFileInfo> scanForSpineFiles(Context context, Uri treeUri, boolean scanSubdirectories) {
+        return scanForSpineFiles(context, treeUri, scanSubdirectories, null);
+    }
+
+    public static List<SpineFileInfo> scanForSpineFiles(Context context, Uri treeUri, boolean scanSubdirectories, ScanCallback callback) {
+        List<SpineFileInfo> results = new ArrayList<>();
+        DocumentFile root = ifSub scan scan();
+ =<DocumentFile> skeletons = new ArrayList<>();
         List<Uri> siblingUris = new ArrayList<>();
 
         for (DocumentFile f : children) {
@@ -50,9 +50,6 @@ public class FileScanner {
             } else if (lower.endsWith(".atlas")) {
                 String base = baseName(name);
                 atlasMap.put(base, f.getUri());
-            } else if (lower.endsWith(".png") || lower.endsWith(".jpg") || lower.endsWith(".webp")) {
-                String base = baseName(name);
-                pngMap.put(base, f.getUri());
             }
             siblingUris.add(f.getUri());
         }
@@ -87,17 +84,28 @@ public class FileScanner {
 
             results.add(info);
             Log.d(TAG, "Found: " + base + " version=" + info.rawVersionString + " atlas=" + (atlasUri != null));
+
+            if (callback != null) {
+                callback.onFileFound(info, results.size());
+            }
         }
 
-        for (DocumentFile f : children) {
-            if (f.isDirectory()) {
-                scanDirectory(context, f, results);
+        if (scanSubdirectories) {
+            for (DocumentFile f : children) {
+                if (f.isDirectory()) {
+                    String folderName = f.getName();
+                    if (folderName == null) folderName = "Unknown";
+                    if (callback != null) {
+                        callback.onScanSubfolder(folderName);
+                    }
+                    scanDirectory(context, f, results, true, callback);
+                }
             }
         }
     }
 
     private static boolean couldBeSpineJson(Context context, DocumentFile f) {
-        try (InputStream is = context.getContentResolver().openInputStream(f.getUri())) {
+        try (java.io.InputStream is = context.getContentResolver().openInputStream(f.getUri())) {
             if (is == null) return false;
             byte[] buf = new byte[256];
             int n = is.read(buf);
