@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity
     private ActivityResultLauncher<String> filePicker;
 
     private MenuItem refreshMenuItem;
+    private ImageView refreshIconView;
     private Animation refreshAnimation;
     private boolean isScanning = false;
 
@@ -313,6 +314,10 @@ public class MainActivity extends AppCompatActivity
 
         refreshMenuItem = menu.findItem(R.id.action_refresh);
 
+        refreshIconView = new ImageView(this);
+        refreshIconView.setImageDrawable(refreshMenuItem.getIcon());
+        refreshMenuItem.setActionView(refreshIconView);
+
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
@@ -353,23 +358,13 @@ public class MainActivity extends AppCompatActivity
     }
 
     private void startRefreshAnimation() {
-        if (refreshMenuItem == null) return;
-        View actionView = refreshMenuItem.getActionView();
-        if (actionView instanceof ImageView) {
-            ImageView refreshIcon = (ImageView) actionView;
-            refreshIcon.setImageDrawable(refreshMenuItem.getIcon());
-            refreshIcon.startAnimation(refreshAnimation);
-        }
+        if (refreshIconView == null) return;
+        refreshIconView.startAnimation(refreshAnimation);
     }
 
     private void stopRefreshAnimation() {
-        if (refreshMenuItem == null) return;
-        View actionView = refreshMenuItem.getActionView();
-        if (actionView instanceof ImageView) {
-            ImageView refreshIcon = (ImageView) actionView;
-            refreshIcon.clearAnimation();
-            refreshIcon.setImageDrawable(null);
-        }
+        if (refreshIconView == null) return;
+        refreshIconView.clearAnimation();
     }
 
     private void refreshList() {
