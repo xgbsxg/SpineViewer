@@ -13,7 +13,7 @@
         android:id="@+id/action_refresh"
         android:title="@string/refresh"
         android:icon="@drawable/ic_shuaxin"
-        app:showAsAction="ifRoom" />
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/action_open_file"
