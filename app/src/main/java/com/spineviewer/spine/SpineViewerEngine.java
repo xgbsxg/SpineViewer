@@ -39,6 +39,7 @@ public abstract class SpineViewerEngine implements ApplicationListener {
     public interface StateListener {
         void onLoaded(List<String> animations, List<String> skins, SpineVersion version);
         void onError(String message);
+        void onRenderError(String message);
         void onAnimationComplete(String animationName);
     }
     protected StateListener stateListener;
@@ -99,6 +100,13 @@ public abstract class SpineViewerEngine implements ApplicationListener {
         Log.e(TAG, "SpineEngine error: " + msg);
         if (stateListener != null) {
             Gdx.app.postRunnable(() -> stateListener.onError(msg));
+        }
+    }
+
+    protected void notifyRenderError(String msg) {
+        Log.e(TAG, "SpineEngine render error: " + msg);
+        if (stateListener != null) {
+            Gdx.app.postRunnable(() -> stateListener.onRenderError(msg));
         }
     }
 
