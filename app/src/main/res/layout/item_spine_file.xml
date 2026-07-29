@@ -21,7 +21,13 @@
         android:padding="14dp"
         android:gravity="center_vertical">
 
-        <!-- Icon / format badge -->
+        <CheckBox
+            android:id="@+id/cb_select"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:visibility="gone"
+            android:layout_marginEnd="8dp" />
+
         <FrameLayout
             android:layout_width="48dp"
             android:layout_height="48dp"
@@ -44,7 +50,6 @@
 
         </FrameLayout>
 
-        <!-- Text content -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -78,10 +83,7 @@
                 android:layout_marginTop="4dp">
 
                 <TextView
-                    android:id="@+id/tv_atlas"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="11sp"
+                    android:id="@=""
                     android:textColor="@color/text_secondary"
                     android:layout_marginEnd="8dp"
                     android:text="@string/atlas_ok" />
@@ -98,7 +100,6 @@
 
         </LinearLayout>
 
-        <!-- Change version button -->
         <ImageButton
             android:id="@+id/btn_change_version"
             android:layout_width="36dp"
