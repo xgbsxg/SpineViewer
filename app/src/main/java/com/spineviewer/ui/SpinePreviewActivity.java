@@ -361,6 +361,10 @@ public class SpinePreviewActivity extends AndroidApplication
     }
 
     @Override
+    public void onRenderError(String message) {
+    }
+
+    @Override
     public void onAnimationComplete(String animationName) {}
 
     @SuppressWarnings({"deprecation", "unchecked"})
