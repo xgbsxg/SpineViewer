@@ -308,7 +308,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public boolean onCreateOptionsMenu       enu refresh menu.findItem(R.id.action_refresh);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        refreshMenuItem = menu.findItem(R.id.action_refresh);
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
@@ -530,7 +533,8 @@ public class MainActivity extends AppCompatActivity
         intent.putExtra(SpinePreviewActivity.EXTRA_VERSION, info.getEffectiveVersion().name());
         intent.putExtra(SpinePreviewActivity.EXTRA_NAME, info.name);
         if (!info.siblingUris.isEmpty()) {
-            intent.putP.EURE new ArrayList<>(info.siblingUris));
+            intent.putParcelableArrayListExtra(SpinePreviewActivity.EXTRA_TEXTURE_URIS,
+                    new ArrayList<>(info.siblingUris));
         }
         startActivity(intent);
     }
