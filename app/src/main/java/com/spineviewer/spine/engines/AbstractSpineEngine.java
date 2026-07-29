@@ -85,27 +85,29 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 Log.d(TAG, "Cache valid, using cached files for " + skelName);
                 File cachedSkel = cacheManager.getCachedFile(skeletonUri, skelName);
                 skeletonFileHandle = new FileHandle(cachedSkel);
-
-                if (atlasUri != null) {
-                    String atlasName = getFileNameFromUri(atlasUri);
-                    if (atlasName == null) atlasName = "skeleton.atlas";
-                    File cachedAtlas = cacheManager.getCachedFile(atlasUri, atlasName);
-                    atlasFileHandle = new FileHandle(cachedAtlas);
-                }
             } else {
-                Log.d(TAG, "Cache invalid, copying files for " + skelName);
+                Log.d(TAG, "Cache invalid, copying skeleton file for " + skelName);
                 File skelFile = cacheManager.copyUriToCache(skeletonUri, skelName, skelSize, skelModified);
                 skeletonFileHandle = new FileHandle(skelFile);
+            }
 
-                if (atlasUri != null) {
-                    String atlasName = getFileNameFromUri(atlasUri);
-                    if (atlasName == null) atlasName = "skeleton.atlas";
-                    long atlasSize = cacheManager.getFileSize(atlasUri);
-                    long atlasModified = cacheManager.getLastModified(atlasUri);
+            if (atlasUri != null) {
+                String atlasName = getFileNameFromUri(atlasUri);
+                if (atlasName == null) atlasName = "skeleton.atlas";
+                long atlasSize = cacheManager.getFileSize(atlasUri);
+                long atlasModified = cacheManager.getLastModified(atlasUri);
+
+                if (cacheManager.isCacheValid(atlasUri, atlasSize, atlasModified)) {
+                    Log.d(TAG, "Atlas cache valid, using cached file");
+                    File cachedAtlas = cacheManager.getCachedFile(atlasUri, atlasName);
+                    atlasFileHandle = new FileHandle(cachedAtlas);
+                } else {
+                    Log.d(TAG, "Atlas cache invalid, copying atlas file");
                     File atlasFile = cacheManager.copyUriToCache(atlasUri, atlasName, atlasSize, atlasModified);
                     atlasFileHandle = new FileHandle(atlasFile);
-                    copyAtlasTexturesCached(atlasFile);
                 }
+
+                ensureTexturesCached(atlasFileHandle.file());
             }
 
             loadSkeleton();
@@ -157,7 +159,9 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
         }
     }
 
-    private void copyAtlasTexturesCached(File atlasFile) {
+    private void ensureTexturesCached(File atlasFile) {
+        if (atlasFile == null) return;
+
         Set<String> textureNames = new HashSet<>();
         try {
             String atlasContent = readFileAsString(atlasFile);
@@ -169,29 +173,20 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 }
             }
         } catch (Exception e) {
-            Log.w(TAG, "Failed to parse atlas, will copy all sibling files", e);
+            Log.w(TAG, "Failed to parse atlas", e);
         }
 
         if (textureNames.isEmpty() && textureUris != null) {
-            Log.d(TAG, "No texture names found in atlas, copying all sibling files");
+            Log.d(TAG, "No texture names in atlas, copying all sibling files");
             for (Uri uri : textureUris) {
                 String name = getFileNameFromUri(uri);
                 if (name == null) continue;
                 if (name.equals(skeletonFileHandle.name()) || name.equals(atlasFileHandle.name())) continue;
-                try {
-                    cacheManager.copyUriToCache(uri, name,
-                            cacheManager.getFileSize(uri),
-                            cacheManager.getLastModified(uri));
-                    File temp = cacheManager.getCachedFile(uri, name);
-                    scaleTextureIfNeeded(temp);
-                } catch (Exception e) {
-                    Log.w(TAG, "Could not copy " + name + ": " + e.getMessage());
-                }
+                copyTextureToCache(uri, name);
             }
             return;
         }
 
-        Log.d(TAG, "Copying " + textureNames.size() + " textures referenced in atlas");
         for (String texName : textureNames) {
             Uri texUri = null;
             if (textureUris != null) {
@@ -207,18 +202,29 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 texUri = buildSiblingUri(atlasUri, texName);
             }
             if (texUri != null) {
-                try {
-                    cacheManager.copyUriToCache(texUri, texName,
-                            cacheManager.getFileSize(texUri),
-                            cacheManager.getLastModified(texUri));
-                    File temp = cacheManager.getCachedFile(texUri, texName);
-                    scaleTextureIfNeeded(temp);
-                } catch (Exception e) {
-                    Log.w(TAG, "Could not copy texture " + texName + ": " + e.getMessage());
-                }
+                copyTextureToCache(texUri, texName);
             } else {
                 Log.w(TAG, "Could not find URI for texture: " + texName);
             }
+        }
+    }
+
+    private void copyTextureToCache(Uri uri, String fileName) {
+        try {
+            if (cacheManager.isFileCached(uri, fileName)) {
+                Log.d(TAG, "Texture already cached: " + fileName);
+                File cachedFile = cacheManager.getCachedFile(uri, fileName);
+                if (cachedFile.exists() && cachedFile.length() > 0) {
+                    return;
+                }
+            }
+            Log.d(TAG, "Copying texture to cache: " + fileName);
+            long fileSize = cacheManager.getFileSize(uri);
+            long lastModified = cacheManager.getLastModified(uri);
+            File temp = cacheManager.copyUriToCache(uri, fileName, fileSize, lastModified);
+            scaleTextureIfNeeded(temp);
+        } catch (Exception e) {
+            Log.w(TAG, "Could not cache texture " + fileName + ": " + e.getMessage());
         }
     }
 
