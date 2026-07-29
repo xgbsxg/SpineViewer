@@ -311,10 +311,12 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        View actionView = menu.findItem(R.id.action_refresh).getActionView();
-        if (actionView instanceof ImageView) {
-            refreshIconView = (ImageView) actionView;
-        }
+        MenuItem refreshItem = menu.findItem(R.id.action_refresh);
+        ImageView refreshView = new ImageView(this);
+        refreshView.setImageDrawable(refreshItem.getIcon());
+        refreshView.setPadding(8, 8, 8, 8);
+        refreshItem.setActionView(refreshView);
+        refreshIconView = refreshView;
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
