@@ -54,7 +54,6 @@ public class MainActivity extends AppCompatActivity
     private ActivityResultLauncher<String[]> permissionLauncher;
     private ActivityResultLauncher<String> filePicker;
 
-    private MenuItem refreshMenuItem;
     private ImageView refreshIconView;
     private Animation refreshAnimation;
     private boolean isScanning = false;
@@ -312,11 +311,10 @@ public class MainActivity extends AppCompatActivity
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
 
-        refreshMenuItem = menu.findItem(R.id.action_refresh);
-
-        refreshIconView = new ImageView(this);
-        refreshIconView.setImageDrawable(refreshMenuItem.getIcon());
-        refreshMenuItem.setActionView(refreshIconView);
+        View actionView = menu.findItem(R.id.action_refresh).getActionView();
+        if (actionView instanceof ImageView) {
+            refreshIconView = (ImageView) actionView;
+        }
 
         MenuItem searchItem = menu.findItem(R.id.action_search);
         SearchView searchView = (SearchView) searchItem.getActionView();
