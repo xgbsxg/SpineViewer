@@ -25,6 +25,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -46,6 +47,7 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
     protected boolean premultipliedAlpha = false;
 
     private CacheManager cacheManager;
+    private File commonCacheDir;
 
     @Override
     public void create() {
@@ -72,49 +74,89 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
 
         try {
             cacheManager = new CacheManager(context);
-            cacheDir = new File(context.getCacheDir(), "spine_tmp");
-            cacheDir.mkdirs();
 
             String skelName = getFileNameFromUri(skeletonUri);
             if (skelName == null) skelName = "skeleton";
 
+            String cacheKey = cacheManager.generateCacheKey(skeletonUri);
+            commonCacheDir = new File(context.getCacheDir(), "spine_cache/" + cacheKey);
+            commonCacheDir.mkdirs();
+
             long skelSize = cacheManager.getFileSize(skeletonUri);
             long skelModified = cacheManager.getLastModified(skeletonUri);
+            File skelCacheIndex = new File(commonCacheDir, ".cache_index");
 
-            if (cacheManager.isCacheValid(skeletonUri, skelSize, skelModified)) {
+            boolean cacheValid = false;
+            if (skelCacheIndex.exists()) {
+                try {
+                    FileInputStream fis = new FileInputStream(skelCacheIndex);
+                    byte[] data = new byte[(int) skelCacheIndex.length()];
+                    fis.read(data);
+                    fis.close();
+                    String content = new String(data, "UTF-8");
+                    String[] parts = content.split("\\|");
+                    if (parts.length == 2) {
+                        long cachedSize = Long.parseLong(parts[0]);
+                        long cachedModified = Long.parseLong(parts[1]);
+                        cacheValid = (cachedSize == skelSize && cachedModified == skelModified);
+                    }
+                } catch (Exception e) {
+                }
+            }
+
+            if (cacheValid) {
                 Log.d(TAG, "Cache valid, using cached files for " + skelName);
-                File cachedSkel = cacheManager.getCachedFile(skeletonUri, skelName);
+                File cachedSkel = new File(commonCacheDir, skelName);
                 skeletonFileHandle = new FileHandle(cachedSkel);
             } else {
-                Log.d(TAG, "Cache invalid, copying skeleton file for " + skelName);
-                File skelFile = cacheManager.copyUriToCache(skeletonUri, skelName, skelSize, skelModified);
-                skeletonFileHandle = new FileHandle(skelFile);
+                Log.d(TAG, "Cache invalid, copying files for " + skelName);
+                copyFileTo(skeletonUri, new File(commonCacheDir, skelName));
+                skeletonFileHandle = new FileHandle(new File(commonCacheDir, skelName));
+                saveSkeletonCacheIndex(skelCacheIndex, skelSize, skelModified);
             }
 
             if (atlasUri != null) {
                 String atlasName = getFileNameFromUri(atlasUri);
                 if (atlasName == null) atlasName = "skeleton.atlas";
-                long atlasSize = cacheManager.getFileSize(atlasUri);
-                long atlasModified = cacheManager.getLastModified(atlasUri);
-
-                if (cacheManager.isCacheValid(atlasUri, atlasSize, atlasModified)) {
-                    Log.d(TAG, "Atlas cache valid, using cached file");
-                    File cachedAtlas = cacheManager.getCachedFile(atlasUri, atlasName);
-                    atlasFileHandle = new FileHandle(cachedAtlas);
-                } else {
-                    Log.d(TAG, "Atlas cache invalid, copying atlas file");
-                    File atlasFile = cacheManager.copyUriToCache(atlasUri, atlasName, atlasSize, atlasModified);
-                    atlasFileHandle = new FileHandle(atlasFile);
+                File atlasFile = new File(commonCacheDir, atlasName);
+                if (!atlasFile.exists()) {
+                    Log.d(TAG, "Copying atlas file to cache");
+                    copyFileTo(atlasUri, atlasFile);
                 }
-
-                ensureTexturesCached(atlasFileHandle.file());
+                atlasFileHandle = new FileHandle(atlasFile);
+                ensureTexturesCached(atlasFile);
             }
+
+            cacheDir = new File(context.getCacheDir(), "spine_tmp");
+            cacheDir.mkdirs();
 
             loadSkeleton();
             updateRendererAlpha();
         } catch (Exception e) {
             notifyError("Failed to load skeleton: " + e.getMessage());
             Log.e(TAG, "create() error", e);
+        }
+    }
+
+    private void saveSkeletonCacheIndex(File indexFile, long fileSize, long lastModified) {
+        try {
+            FileOutputStream fos = new FileOutputStream(indexFile);
+            String content = fileSize + "|" + lastModified;
+            fos.write(content.getBytes("UTF-8"));
+            fos.close();
+        } catch (Exception e) {
+        }
+    }
+
+    private void copyFileTo(Uri sourceUri, File destFile) throws Exception {
+        try (InputStream is = context.getContentResolver().openInputStream(sourceUri);
+             FileOutputStream fos = new FileOutputStream(destFile)) {
+            if (is == null) throw new Exception("Cannot open URI: " + sourceUri);
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = is.read(buf)) > 0) {
+                fos.write(buf, 0, n);
+            }
         }
     }
 
@@ -182,12 +224,25 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 String name = getFileNameFromUri(uri);
                 if (name == null) continue;
                 if (name.equals(skeletonFileHandle.name()) || name.equals(atlasFileHandle.name())) continue;
-                copyTextureToCache(uri, name);
+                File texFile = new File(commonCacheDir, name);
+                if (!texFile.exists()) {
+                    try {
+                        copyFileTo(uri, texFile);
+                        scaleTextureIfNeeded(texFile);
+                    } catch (Exception e) {
+                        Log.w(TAG, "Could not cache texture " + name + ": " + e.getMessage());
+                    }
+                }
             }
             return;
         }
 
         for (String texName : textureNames) {
+            File texFile = new File(commonCacheDir, texName);
+            if (texFile.exists() && texFile.length() > 0) {
+                continue;
+            }
+
             Uri texUri = null;
             if (textureUris != null) {
                 for (Uri uri : textureUris) {
@@ -202,29 +257,15 @@ public abstract class AbstractSpineEngine extends SpineViewerEngine {
                 texUri = buildSiblingUri(atlasUri, texName);
             }
             if (texUri != null) {
-                copyTextureToCache(texUri, texName);
+                try {
+                    copyFileTo(texUri, texFile);
+                    scaleTextureIfNeeded(texFile);
+                } catch (Exception e) {
+                    Log.w(TAG, "Could not cache texture " + texName + ": " + e.getMessage());
+                }
             } else {
                 Log.w(TAG, "Could not find URI for texture: " + texName);
             }
-        }
-    }
-
-    private void copyTextureToCache(Uri uri, String fileName) {
-        try {
-            if (cacheManager.isFileCached(uri, fileName)) {
-                Log.d(TAG, "Texture already cached: " + fileName);
-                File cachedFile = cacheManager.getCachedFile(uri, fileName);
-                if (cachedFile.exists() && cachedFile.length() > 0) {
-                    return;
-                }
-            }
-            Log.d(TAG, "Copying texture to cache: " + fileName);
-            long fileSize = cacheManager.getFileSize(uri);
-            long lastModified = cacheManager.getLastModified(uri);
-            File temp = cacheManager.copyUriToCache(uri, fileName, fileSize, lastModified);
-            scaleTextureIfNeeded(temp);
-        } catch (Exception e) {
-            Log.w(TAG, "Could not cache texture " + fileName + ": " + e.getMessage());
         }
     }
 
