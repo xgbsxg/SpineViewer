@@ -20,6 +20,9 @@ public class PreferenceManager {
     private static final String KEY_LAST_SCAN_URI = "last_scan_uri";
     private static final String KEY_DEFAULT_PREMULTIPLY_ALPHA = "default_premultiply_alpha";
     private static final String KEY_CACHE_INDEX = "cache_index_json";
+    private static final String KEY_DEFAULT_ANIMATION_SPEED = "default_animation_speed";
+    private static final String KEY_DEFAULT_SHOW_BONES = "default_show_bones";
+    private static final String KEY_SCAN_SUBDIRECTORIES = "scan_subdirectories";
 
     private final SharedPreferences prefs;
     private final Gson gson;
@@ -147,5 +150,29 @@ public class PreferenceManager {
 
     public void clearCacheIndex() {
         prefs.edit().remove(KEY_CACHE_INDEX).apply();
+    }
+
+    public void setDefaultAnimationSpeed(float speed) {
+        prefs.edit().putFloat(KEY_DEFAULT_ANIMATION_SPEED, speed).apply();
+    }
+
+    public float getDefaultAnimationSpeed() {
+        return prefs.getFloat(KEY_DEFAULT_ANIMATION_SPEED, 1.0f);
+    }
+
+    public void setDefaultShowBones(boolean show) {
+        prefs.edit().putBoolean(KEY_DEFAULT_SHOW_BONES, show).apply();
+    }
+
+    public boolean getDefaultShowBones() {
+        return prefs.getBoolean(KEY_DEFAULT_SHOW_BONES, false);
+    }
+
+    public void setScanSubdirectories(boolean scan) {
+        prefs.edit().putBoolean(KEY_SCAN_SUBDIRECTORIES, scan).apply();
+    }
+
+    public boolean getScanSubdirectories() {
+        return prefs.getBoolean(KEY_SCAN_SUBDIRECTORIES, true);
     }
 }
