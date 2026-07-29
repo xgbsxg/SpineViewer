@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -14,7 +15,9 @@ import com.spineviewer.R;
 import com.spineviewer.spine.SpineFileInfo;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.ViewHolder> {
 
@@ -24,10 +27,18 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
         void onFileLongClick(SpineFileInfo info, int position);
     }
 
+    public interface OnMultiSelectListener {
+        void onSelectionChanged(int selectedCount);
+    }
+
     private final Context context;
     private List<SpineFileInfo> items;
     private List<SpineFileInfo> allItems;
     private final OnFileClickListener listener;
+    private OnMultiSelectListener multiSelectListener;
+
+    private boolean multiSelectMode = false;
+    private Set<Integer> selectedPositions = new HashSet<>();
 
     public SpineFileAdapter(Context context, List<SpineFileInfo> items, OnFileClickListener listener) {
         this.context = context;
@@ -36,9 +47,14 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
         this.listener = listener;
     }
 
+    public void setOnMultiSelectListener(OnMultiSelectListener listener) {
+        this.multiSelectListener = listener;
+    }
+
     public void setItems(List<SpineFileInfo> newItems) {
         allItems = new ArrayList<>(newItems);
         items = new ArrayList<>(newItems);
+        selectedPositions.clear();
         notifyDataSetChanged();
     }
 
@@ -55,6 +71,75 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
                 }
             }
         }
+        selectedPositions.clear();
+        notifyDataSetChanged();
+    }
+
+    public boolean isMultiSelectMode() {
+        return multiSelectMode;
+    }
+
+    public void setMultiSelectMode(boolean multiSelectMode) {
+        this.multiSelectMode = multiSelectMode;
+        if (!multiSelectMode) {
+            selectedPositions.clear();
+        }
+        notifyDataSetChanged();
+    }
+
+    public void toggleSelection(int position) {
+        if (selectedPositions.contains(position)) {
+            selectedPositions.remove(position);
+        } else {
+            selectedPositions.add(position);
+        }
+        notifyItemChanged(position);
+        if (multiSelectListener != null) {
+            multiSelectListener.onSelectionChanged(selectedPositions.size());
+        }
+    }
+
+    public void selectAll() {
+        for (int i = 0; i < items.size(); i++) {
+            selectedPositions.add(i);
+        }
+        notifyDataSetChanged();
+        if (multiSelectListener != null) {
+            multiSelectListener.onSelectionChanged(selectedPositions.size());
+        }
+    }
+
+    public void deselectAll() {
+        selectedPositions.clear();
+        notifyDataSetChanged();
+        if (multiSelectListener != null) {
+            multiSelectListener.onSelectionChanged(0);
+        }
+    }
+
+    public boolean isSelected(int position) {
+        return selectedPositions.contains(position);
+    }
+
+    public int getSelectedCount() {
+        return selectedPositions.size();
+    }
+
+    public List<SpineFileInfo> getSelectedItems() {
+        List<SpineFileInfo> selected = new ArrayList<>();
+        for (Integer pos : selectedPositions) {
+            if (pos >= 0 && pos < items.size()) {
+                selected.add(items.get(pos));
+            }
+        }
+        return selected;
+    }
+
+    public void removeItems(List<SpineFileInfo> itemsToRemove) {
+        allItems.removeAll(itemsToRemove);
+        items.removeAll(itemsToRemove);
+        selectedPositions.clear();
+        multiSelectMode = false;
         notifyDataSetChanged();
     }
 
@@ -92,14 +177,26 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
             holder.detectionBadge.setVisibility(View.GONE);
         }
 
-        holder.itemView.setOnClickListener(v -> listener.onFileClick(info));
+        if (multiSelectMode) {
+            holder.checkBox.setVisibility(View.VISIBLE);
+            holder.checkBox.setChecked(selectedPositions.contains(position));
+            holder.changeVersionBtn.setVisibility(View.GONE);
+
+            holder.itemView.setOnClickListener(v -> toggleSelection(position));
+            holder.itemView.setOnLongClickListener(null);
+        } else {
+            holder.checkBox.setVisibility(View.GONE);
+            holder.changeVersionBtn.setVisibility(View.VISIBLE);
+
+            holder.itemView.setOnClickListener(v -> listener.onFileClick(info));
+            holder.itemView.setOnLongClickListener(v -> {
+                listener.onFileLongClick(info, holder.getAdapterPosition());
+                return true;
+            });
+        }
+
         holder.changeVersionBtn.setOnClickListener(v ->
                 listener.onVersionChangeClick(info, holder.getAdapterPosition()));
-
-        holder.itemView.setOnLongClickListener(v -> {
-            listener.onFileLongClick(info, holder.getAdapterPosition());
-            return true;
-        });
     }
 
     @Override
@@ -108,11 +205,13 @@ public class SpineFileAdapter extends RecyclerView.Adapter<SpineFileAdapter.View
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
+        CheckBox checkBox;
         TextView nameText, versionText, formatBadge, atlasStatus, detectionBadge;
         ImageButton changeVersionBtn;
 
         ViewHolder(View v) {
             super(v);
+            checkBox = v.findViewById(R.id.cb_select);
             nameText = v.findViewById(R.id.tv_name);
             versionText = v.findViewById(R.id.tv_version);
             formatBadge = v.findViewById(R.id.tv_format);
