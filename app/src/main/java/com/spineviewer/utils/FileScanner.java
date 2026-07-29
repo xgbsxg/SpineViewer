@@ -2,7 +2,6 @@ package com.spineviewer.utils;
 
 import android.content.Context;
 import android.net.Uri;
-import android.provider.DocumentsContract;
 import android.util.Log;
 
 import androidx.documentfile.provider.DocumentFile;
@@ -23,7 +22,7 @@ public class FileScanner {
         void onScanSubfolder(String folderName);
     }
 
-    public static List<SpInfo> scanForSpineFiles(Context context, Uri treeUri) {
+    public static List<SpineFileInfo> scanForSpineFiles(Context context, Uri treeUri) {
         return scanForSpineFiles(context, treeUri, true, null);
     }
 
@@ -33,8 +32,19 @@ public class FileScanner {
 
     public static List<SpineFileInfo> scanForSpineFiles(Context context, Uri treeUri, boolean scanSubdirectories, ScanCallback callback) {
         List<SpineFileInfo> results = new ArrayList<>();
-        DocumentFile root = ifSub scan scan();
- =<DocumentFile> skeletons = new ArrayList<>();
+        DocumentFile root = DocumentFile.fromTreeUri(context, treeUri);
+        if (root == null) return results;
+
+        scanDirectory(context, root, results, scanSubdirectories, callback);
+        return results;
+    }
+
+    private static void scanDirectory(Context context, DocumentFile dir, List<SpineFileInfo> results, boolean scanSubdirectories, ScanCallback callback) {
+        DocumentFile[] children = dir.listFiles();
+        if (children == null) return;
+
+        Map<String, Uri> atlasMap = new HashMap<>();
+        List<DocumentFile> skeletons = new ArrayList<>();
         List<Uri> siblingUris = new ArrayList<>();
 
         for (DocumentFile f : children) {
